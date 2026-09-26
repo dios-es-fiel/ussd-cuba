@@ -4,13 +4,14 @@
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
+    <!-- Simple phone icon -->
     <path
         android:fillColor="#FFFFFF"
-        android:pathData="M54,30c-13.2,0 -24,10.8 -24,24s10.8,24 24,24 24,-10.8 24,-24 -10.8,-24 -24,-24zM54,70c-8.8,0 -16,-7.2 -16,-16s7.2,-16 16,-16 16,7.2 16,16 -7.2,16 -16,16z"/>
+        android:pathData="M54,20 C40.2,20 29,31.2 29,45 L29,63 C29,76.8 40.2,88 54,88 C67.8,88 79,76.8 79,63 L79,45 C79,31.2 67.8,20 54,20 Z M54,28 C63.4,28 71,35.6 71,45 L71,63 C71,72.4 63.4,80 54,80 C44.6,80 37,72.4 37,63 L37,45 C37,35.6 44.6,28 54,28 Z"/>
     <path
         android:fillColor="#FFFFFF"
-        android:pathData="M42,48h24v4h-24z"/>
+        android:pathData="M48,52 h12 v6 h-12 z"/>
     <path
         android:fillColor="#FFFFFF"
-        android:pathData="M42,56h16v4h-16z"/>
+        android:pathData="M48,62 h8 v4 h-8 z"/>
 </vector>
