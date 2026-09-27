@@ -84,15 +84,32 @@ class MasFragment : Fragment() {
         b.btnWifiSettings.setOnClickListener { WifiHelper.openWifiSettings(requireContext()) }
         b.btnStartSession.setOnClickListener {
             val act = requireActivity() as MainActivity
-            val mins = act.prefs.getSessionDurationMin()
+            if (act.prefs.getNautaUser().isNotBlank()) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M &&
+                    !Settings.canDrawOverlays(requireContext())
+                ) {
+                    Toast.makeText(requireContext(), "Concede permiso de ventanas flotantes", Toast.LENGTH_LONG).show()
+                    try {
+                        startActivity(Intent(
+                            Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                            Uri.parse("package:${requireContext().packageName}")
+                        ))
+                    } catch (_: Exception) {}
+                    return@setOnClickListener
+                }
+                act.prefs.setShowFloatingTime(true)
+                act.prefs.setUseNautaRealTime(true)
+                OverlayService.syncNauta(requireContext())
+                Toast.makeText(requireContext(), "Sincronizando tiempo Nauta…", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
             val options = arrayOf("15 min", "30 min", "60 min", "90 min", "120 min", "Personalizado")
             AlertDialog.Builder(requireContext())
-                .setTitle("Iniciar contador de sesión")
+                .setTitle("Iniciar contador (sin cuenta Nauta guardada)")
                 .setItems(options) { _, which ->
                     val m = when (which) {
                         0 -> 15; 1 -> 30; 2 -> 60; 3 -> 90; 4 -> 120
                         else -> {
-                            // custom handled below
                             showCustomMinutes(act)
                             return@setItems
                         }
@@ -131,8 +148,9 @@ class MasFragment : Fragment() {
             return
         }
         act.prefs.setShowFloatingTime(true)
+        act.prefs.setUseNautaRealTime(false)
         OverlayService.setTime(requireContext(), minutes)
-        Toast.makeText(requireContext(), "Contador: $minutes min", Toast.LENGTH_SHORT).show()
+        Toast.makeText(requireContext(), "Contador manual: $minutes min", Toast.LENGTH_SHORT).show()
     }
 
     override fun onDestroyView() { super.onDestroyView(); _b = null }
@@ -175,7 +193,6 @@ class SettingsFragment : Fragment() {
             act.findViewById<ViewPager2>(R.id.viewPager)?.isUserInputEnabled = !v
         }
 
-        // Notif shortcuts
         b.switchNotifShortcuts.isChecked = p.getShowNotifShortcuts()
         b.switchNotifShortcuts.setOnCheckedChangeListener { _, v ->
             p.setShowNotifShortcuts(v)
@@ -184,7 +201,55 @@ class SettingsFragment : Fragment() {
         }
         b.btnNotifCodes.setOnClickListener { pickNotifCodes(act) }
 
-        // Floating time
+        b.switchNautaReal.isChecked = p.getUseNautaRealTime()
+        b.switchNautaReal.setOnCheckedChangeListener { _, v ->
+            p.setUseNautaRealTime(v)
+            if (v && p.getShowFloatingTime()) OverlayService.syncNauta(requireContext())
+        }
+        b.btnNautaAccount.setOnClickListener {
+            val box = LinearLayout(requireContext()).apply {
+                orientation = LinearLayout.VERTICAL; setPadding(48, 24, 48, 8)
+            }
+            val user = EditText(requireContext()).apply {
+                hint = "usuario@nauta.com.cu"
+                setText(p.getNautaUser())
+                inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS
+            }
+            val pass = EditText(requireContext()).apply {
+                hint = "Contraseña"
+                setText(p.getNautaPass())
+                inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
+            }
+            box.addView(user); box.addView(pass)
+            AlertDialog.Builder(requireContext())
+                .setTitle("Cuenta Nauta")
+                .setMessage("Se usa para consultar el tiempo restante real en el portal ETECSA. Solo en este teléfono.")
+                .setView(box)
+                .setPositiveButton("Guardar") { _, _ ->
+                    p.setNautaUser(user.text.toString())
+                    p.setNautaPass(pass.text.toString())
+                    Toast.makeText(requireContext(), "Cuenta guardada", Toast.LENGTH_SHORT).show()
+                }
+                .setNegativeButton("Borrar") { _, _ ->
+                    p.setNautaUser(""); p.setNautaPass(""); p.setNautaUuid("")
+                    Toast.makeText(requireContext(), "Cuenta borrada", Toast.LENGTH_SHORT).show()
+                }
+                .setNeutralButton("Cerrar", null).show()
+        }
+        b.btnSyncNauta.setOnClickListener {
+            if (p.getNautaUser().isBlank()) {
+                Toast.makeText(requireContext(), "Guarda primero la cuenta Nauta", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+            if (!ensureOverlayPerm()) return@setOnClickListener
+            p.setShowFloatingTime(true)
+            p.setUseNautaRealTime(true)
+            b.switchFloatTime.isChecked = true
+            b.switchNautaReal.isChecked = true
+            OverlayService.syncNauta(requireContext())
+            Toast.makeText(requireContext(), "Sincronizando con portal ETECSA…", Toast.LENGTH_SHORT).show()
+        }
+
         b.switchFloatTime.isChecked = p.getShowFloatingTime()
         b.switchFloatTime.setOnCheckedChangeListener { _, v ->
             if (v && !ensureOverlayPerm()) {
@@ -193,6 +258,7 @@ class SettingsFragment : Fragment() {
             }
             p.setShowFloatingTime(v)
             syncOverlays(act)
+            if (v && p.getUseNautaRealTime()) OverlayService.syncNauta(requireContext())
         }
         b.btnSetSessionTime.setOnClickListener {
             val et = EditText(requireContext()).apply {
@@ -201,15 +267,17 @@ class SettingsFragment : Fragment() {
                 hint = "Minutos de sesión"
                 setPadding(48, 32, 48, 16)
             }
-            AlertDialog.Builder(requireContext()).setTitle("Duración sesión WiFi")
-                .setMessage("Cuenta regresiva flotante al conectar a WIFI_ETECSA")
+            AlertDialog.Builder(requireContext()).setTitle("Contador manual")
+                .setMessage("Solo si no usas tiempo real Nauta")
                 .setView(et)
                 .setPositiveButton("Guardar e iniciar") { _, _ ->
                     val m = et.text.toString().toIntOrNull() ?: 60
                     p.setSessionDurationMin(m)
                     if (!ensureOverlayPerm()) return@setPositiveButton
                     p.setShowFloatingTime(true)
+                    p.setUseNautaRealTime(false)
                     b.switchFloatTime.isChecked = true
+                    b.switchNautaReal.isChecked = false
                     OverlayService.setTime(requireContext(), m)
                     Toast.makeText(requireContext(), "$m min iniciados", Toast.LENGTH_SHORT).show()
                 }.setNegativeButton("Solo guardar") { _, _ ->
@@ -218,7 +286,6 @@ class SettingsFragment : Fragment() {
                 }.setNeutralButton("Cerrar", null).show()
         }
 
-        // Speed monitor
         b.switchSpeed.isChecked = p.getShowSpeedMonitor()
         b.switchSpeed.setOnCheckedChangeListener { _, v ->
             if (v && !ensureOverlayPerm()) {
@@ -229,7 +296,6 @@ class SettingsFragment : Fragment() {
             syncOverlays(act)
         }
         b.btnSpeedConfig.setOnClickListener { showSpeedConfig(act) }
-
         b.btnOverlayPerm.setOnClickListener { openOverlaySettings() }
 
         b.spinnerTheme.onItemSelectedListener = object : android.widget.AdapterView.OnItemSelectedListener {
@@ -484,7 +550,6 @@ class SettingsFragment : Fragment() {
                         AlertDialog.Builder(requireContext()).setTitle("Tamaño texto (sp)")
                             .setItems(opts) { _, i ->
                                 p.setOverlayTextSizeSp(listOf(10, 12, 14, 16, 18, 20)[i])
-                                // need recreate views
                                 OverlayService.stop(requireContext())
                                 if (p.getShowSpeedMonitor() || p.getShowFloatingTime())
                                     OverlayService.start(requireContext())
