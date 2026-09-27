@@ -170,7 +170,6 @@ class PrefsHelper(context: Context) {
     fun getLastTab() = prefs.getInt("last_tab", 0)
     fun setLastTab(i: Int) = prefs.edit().putInt("last_tab", i).apply()
 
-    // Notification quick access (3-4 codes)
     fun getShowNotifShortcuts() = prefs.getBoolean("notif_shortcuts", false)
     fun setShowNotifShortcuts(v: Boolean) = prefs.edit().putBoolean("notif_shortcuts", v).apply()
 
@@ -182,7 +181,6 @@ class PrefsHelper(context: Context) {
     fun setNotifShortcutIds(ids: List<String>) =
         prefs.edit().putString("notif_shortcut_ids", ids.take(4).joinToString(",")).apply()
 
-    // Floating session time
     fun getShowFloatingTime() = prefs.getBoolean("float_time", false)
     fun setShowFloatingTime(v: Boolean) = prefs.edit().putBoolean("float_time", v).apply()
 
@@ -195,11 +193,9 @@ class PrefsHelper(context: Context) {
     fun getSessionRemainingMs() = prefs.getLong("session_remaining_ms", 0L)
     fun setSessionRemainingMs(ms: Long) = prefs.edit().putLong("session_remaining_ms", ms).apply()
 
-    // Speed monitor
     fun getShowSpeedMonitor() = prefs.getBoolean("speed_monitor", false)
     fun setShowSpeedMonitor(v: Boolean) = prefs.edit().putBoolean("speed_monitor", v).apply()
 
-    /** 0=KB/s 1=MB/s 2=auto */
     fun getSpeedUnit() = prefs.getInt("speed_unit", 2)
     fun setSpeedUnit(u: Int) = prefs.edit().putInt("speed_unit", u.coerceIn(0, 2)).apply()
 
@@ -220,4 +216,28 @@ class PrefsHelper(context: Context) {
 
     fun getOverlayY() = prefs.getInt("overlay_y", 200)
     fun setOverlayY(v: Int) = prefs.edit().putInt("overlay_y", v).apply()
+
+    // ── Nauta real time ──
+    fun getNautaUser() = prefs.getString("nauta_user", "") ?: ""
+    fun setNautaUser(v: String) = prefs.edit().putString("nauta_user", v.trim()).apply()
+
+    fun getNautaPass() = prefs.getString("nauta_pass", "") ?: ""
+    fun setNautaPass(v: String) = prefs.edit().putString("nauta_pass", v).apply()
+
+    fun getNautaUuid() = prefs.getString("nauta_uuid", "") ?: ""
+    fun setNautaUuid(v: String) = prefs.edit().putString("nauta_uuid", v).apply()
+
+    /** true = consultar portal Nauta; false = contador manual */
+    fun getUseNautaRealTime() = prefs.getBoolean("nauta_real_time", true)
+    fun setUseNautaRealTime(v: Boolean) = prefs.edit().putBoolean("nauta_real_time", v).apply()
+
+    fun getNautaRemainingSec() = prefs.getLong("nauta_remaining_sec", -1L)
+    fun setNautaRemainingSec(s: Long) = prefs.edit().putLong("nauta_remaining_sec", s).apply()
+
+    fun getNautaLastSyncMs() = prefs.getLong("nauta_last_sync", 0L)
+    fun setNautaLastSyncMs(ms: Long) = prefs.edit().putLong("nauta_last_sync", ms).apply()
+
+    /** Intervalo de reconsulta al servidor (segundos), default 30 */
+    fun getNautaSyncIntervalSec() = prefs.getInt("nauta_sync_sec", 30).coerceIn(15, 120)
+    fun setNautaSyncIntervalSec(s: Int) = prefs.edit().putInt("nauta_sync_sec", s.coerceIn(15, 120)).apply()
 }
