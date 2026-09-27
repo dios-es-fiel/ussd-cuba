@@ -116,7 +116,6 @@ class PrefsHelper(context: Context) {
     fun setShortcutIds(ids: List<String>) =
         prefs.edit().putString("shortcuts", ids.take(4).joinToString(",")).apply()
 
-    /** Templates: name, number, amount */
     fun getTemplates(): List<Triple<String, String, String>> {
         val raw = prefs.getString("templates", "[]") ?: "[]"
         return try {
@@ -170,4 +169,55 @@ class PrefsHelper(context: Context) {
 
     fun getLastTab() = prefs.getInt("last_tab", 0)
     fun setLastTab(i: Int) = prefs.edit().putInt("last_tab", i).apply()
+
+    // Notification quick access (3-4 codes)
+    fun getShowNotifShortcuts() = prefs.getBoolean("notif_shortcuts", false)
+    fun setShowNotifShortcuts(v: Boolean) = prefs.edit().putBoolean("notif_shortcuts", v).apply()
+
+    fun getNotifShortcutIds(): List<String> {
+        val raw = prefs.getString("notif_shortcut_ids", "c1,c2,p1,c6") ?: "c1,c2,p1,c6"
+        return raw.split(",").filter { it.isNotBlank() }.take(4)
+    }
+
+    fun setNotifShortcutIds(ids: List<String>) =
+        prefs.edit().putString("notif_shortcut_ids", ids.take(4).joinToString(",")).apply()
+
+    // Floating session time
+    fun getShowFloatingTime() = prefs.getBoolean("float_time", false)
+    fun setShowFloatingTime(v: Boolean) = prefs.edit().putBoolean("float_time", v).apply()
+
+    fun getSessionDurationMin() = prefs.getInt("session_min", 60)
+    fun setSessionDurationMin(m: Int) = prefs.edit().putInt("session_min", m.coerceIn(1, 24 * 60)).apply()
+
+    fun getSessionEndMs() = prefs.getLong("session_end_ms", 0L)
+    fun setSessionEndMs(ms: Long) = prefs.edit().putLong("session_end_ms", ms).apply()
+
+    fun getSessionRemainingMs() = prefs.getLong("session_remaining_ms", 0L)
+    fun setSessionRemainingMs(ms: Long) = prefs.edit().putLong("session_remaining_ms", ms).apply()
+
+    // Speed monitor
+    fun getShowSpeedMonitor() = prefs.getBoolean("speed_monitor", false)
+    fun setShowSpeedMonitor(v: Boolean) = prefs.edit().putBoolean("speed_monitor", v).apply()
+
+    /** 0=KB/s 1=MB/s 2=auto */
+    fun getSpeedUnit() = prefs.getInt("speed_unit", 2)
+    fun setSpeedUnit(u: Int) = prefs.edit().putInt("speed_unit", u.coerceIn(0, 2)).apply()
+
+    fun getSpeedIntervalMs() = prefs.getInt("speed_interval", 1000)
+    fun setSpeedIntervalMs(ms: Int) = prefs.edit().putInt("speed_interval", ms.coerceIn(500, 5000)).apply()
+
+    fun getSpeedShowUpload() = prefs.getBoolean("speed_show_up", true)
+    fun setSpeedShowUpload(v: Boolean) = prefs.edit().putBoolean("speed_show_up", v).apply()
+
+    fun getOverlayOpacity() = prefs.getInt("overlay_opacity", 180).coerceIn(80, 255)
+    fun setOverlayOpacity(v: Int) = prefs.edit().putInt("overlay_opacity", v.coerceIn(80, 255)).apply()
+
+    fun getOverlayTextSizeSp() = prefs.getInt("overlay_text_sp", 14).coerceIn(10, 22)
+    fun setOverlayTextSizeSp(v: Int) = prefs.edit().putInt("overlay_text_sp", v.coerceIn(10, 22)).apply()
+
+    fun getOverlayX() = prefs.getInt("overlay_x", 40)
+    fun setOverlayX(v: Int) = prefs.edit().putInt("overlay_x", v).apply()
+
+    fun getOverlayY() = prefs.getInt("overlay_y", 200)
+    fun setOverlayY(v: Int) = prefs.edit().putInt("overlay_y", v).apply()
 }
