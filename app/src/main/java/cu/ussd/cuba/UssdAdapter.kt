@@ -1,18 +1,28 @@
 package cu.ussd.cuba
 
+import android.util.TypedValue
 import android.view.LayoutInflater
+import android.view.View
 import android.view.ViewGroup
+import android.widget.LinearLayout
 import androidx.core.content.ContextCompat
+import androidx.core.view.isVisible
+import androidx.core.view.updateLayoutParams
+import androidx.core.view.updatePadding
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
+import com.google.android.material.card.MaterialCardView
 import cu.ussd.cuba.databinding.ItemUssdBinding
 
 class UssdAdapter(
     private val onClick: (UssdCode) -> Unit,
     private val onLongClick: (UssdCode) -> Unit,
     private val onFavoriteClick: (UssdCode) -> Unit,
-    private val isFavorite: (String) -> Boolean
+    private val isFavorite: (String) -> Boolean,
+    private val styleProvider: () -> ThemeHelper.UiStyle = {
+        ThemeHelper.uiStyle("clasico")
+    }
 ) : ListAdapter<UssdCode, UssdAdapter.ViewHolder>(DiffCallback) {
 
     object DiffCallback : DiffUtil.ItemCallback<UssdCode>() {
@@ -30,9 +40,53 @@ class UssdAdapter(
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val item = getItem(position)
         val b = holder.binding
+        val ctx = b.root.context
+        val style = styleProvider()
+        val density = ctx.resources.displayMetrics.density
+
+        fun dp(v: Int) = (v * density).toInt()
+        fun dpF(v: Float) = v * density
+
+        // Card chrome
+        val card = b.root as MaterialCardView
+        card.radius = dpF(style.cornerRadiusDp)
+        card.cardElevation = dpF(style.cardElevationDp)
+        card.strokeWidth = dp(style.strokeWidthDp.toInt().coerceAtLeast(if (style.strokeWidthDp > 0) 1 else 0))
+        val lp = card.layoutParams as? ViewGroup.MarginLayoutParams
+        lp?.let {
+            val m = dp(style.itemMarginVDp)
+            it.topMargin = m
+            it.bottomMargin = m
+            card.layoutParams = it
+        }
+
+        // Inner padding
+        val inner = card.getChildAt(0) as? LinearLayout
+        inner?.updatePadding(
+            dp(style.itemPaddingDp),
+            dp(style.itemPaddingDp),
+            dp(style.itemPaddingDp),
+            dp(style.itemPaddingDp)
+        )
+
+        // Accent bar
+        b.accentBar.isVisible = style.showAccentBar
+
+        // Text
         b.tvTitle.text = item.title
+        b.tvTitle.setTextSize(TypedValue.COMPLEX_UNIT_SP, style.titleSp)
         b.tvCode.text = item.code.replace(Regex("\\{[^}]+\\}"), "…")
+        b.tvCode.setTextSize(TypedValue.COMPLEX_UNIT_SP, style.codeSp)
         b.tvDescription.text = item.description
+        b.tvDescription.setTextSize(TypedValue.COMPLEX_UNIT_SP, style.descSp)
+        b.tvDescription.isVisible = style.showDescription && item.description.isNotBlank()
+
+        // Favorite button size
+        val favSize = dp(style.favButtonDp)
+        b.btnFavorite.updateLayoutParams {
+            width = favSize
+            height = favSize
+        }
 
         val fav = isFavorite(item.id)
         b.btnFavorite.setImageResource(
@@ -41,7 +95,7 @@ class UssdAdapter(
         )
         b.btnFavorite.setColorFilter(
             ContextCompat.getColor(
-                b.root.context,
+                ctx,
                 if (fav) android.R.color.holo_orange_light else android.R.color.darker_gray
             )
         )
