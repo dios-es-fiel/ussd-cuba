@@ -46,6 +46,12 @@ class HomeFragment : Fragment() {
         setupShortcuts()
         vm.query.observe(viewLifecycleOwner) { query = it; refresh() }
         vm.tick.observe(viewLifecycleOwner) { refresh() }
+        vm.styleTick.observe(viewLifecycleOwner) {
+            setupShortcuts()
+            favAdapter.forceRestyle()
+            recentAdapter.forceRestyle()
+            mostAdapter.forceRestyle()
+        }
         refresh()
     }
 
@@ -56,6 +62,7 @@ class HomeFragment : Fragment() {
     )
 
     private fun setupShortcuts() {
+        if (_b == null) return
         val act = requireActivity() as MainActivity
         val grid = b.gridShortcuts
         grid.removeAllViews()
@@ -161,6 +168,7 @@ class ListFragment : Fragment() {
         b.recyclerView.itemAnimator = null
         vm.query.observe(viewLifecycleOwner) { query = it; apply() }
         vm.tick.observe(viewLifecycleOwner) { apply() }
+        vm.styleTick.observe(viewLifecycleOwner) { adapter.forceRestyle() }
         apply()
     }
 
