@@ -50,6 +50,7 @@ class MasFragment : Fragment() {
         b.chipWifi.setOnClickListener { sub = "WiFi"; sync(); applyWifi() }
         vm.query.observe(viewLifecycleOwner) { query = it; if (sub == "WiFi") applyWifi() else apply() }
         vm.tick.observe(viewLifecycleOwner) { if (sub == "WiFi") applyWifi() else apply() }
+        vm.styleTick.observe(viewLifecycleOwner) { adapter.forceRestyle() }
         sync(); apply()
     }
 
@@ -334,7 +335,7 @@ class SettingsFragment : Fragment() {
                 b.tvUiStyleDesc.text = style.description
                 if (style.id != p.getUiStyleId()) {
                     p.setUiStyleId(style.id)
-                    act.notifyRefresh()
+                    act.notifyStyleChanged()
                     Toast.makeText(requireContext(), "Estilo: ${style.name}", Toast.LENGTH_SHORT).show()
                 }
             }
@@ -386,60 +387,20 @@ class SettingsFragment : Fragment() {
                 }.setNegativeButton("Cerrar", null).show()
         }
 
-        b.btnTemplates.setOnClickListener {
-            val t = p.getTemplates()
-            val labels = t.map { "${it.first}: ${it.second} / ${it.third}" }.ifEmpty { listOf("(vacío)") }
-            AlertDialog.Builder(requireContext()).setTitle("Plantillas transferencia")
-                .setItems(labels.toTypedArray()) { _, which ->
-                    if (t.isEmpty()) return@setItems
-                    val item = t[which]
-                    AlertDialog.Builder(requireContext())
-                        .setTitle("¿Eliminar plantilla?")
-                        .setMessage("${item.first}\n${item.second} · ${item.third} CUP")
-                        .setPositiveButton("Eliminar") { _, _ ->
-                            p.saveTemplates(t.filterIndexed { i, _ -> i != which })
-                            Toast.makeText(requireContext(), "Eliminada", Toast.LENGTH_SHORT).show()
-                        }
-                        .setNegativeButton("Cancelar", null)
-                        .show()
-                }
-                .setPositiveButton("Añadir") { _, _ ->
-                    val box = LinearLayout(requireContext()).apply {
-                        orientation = LinearLayout.VERTICAL; setPadding(48, 24, 48, 8)
-                    }
-                    val n = EditText(requireContext()).apply { hint = "Nombre (ej. Mamá)" }
-                    val num = EditText(requireContext()).apply {
-                        hint = "Número"; inputType = InputType.TYPE_CLASS_PHONE
-                    }
-                    val amt = EditText(requireContext()).apply {
-                        hint = "Monto CUP"; inputType = InputType.TYPE_CLASS_NUMBER
-                    }
-                    box.addView(n); box.addView(num); box.addView(amt)
-                    AlertDialog.Builder(requireContext()).setTitle("Plantilla").setView(box)
-                        .setPositiveButton("Guardar") { _, _ ->
-                            if (num.text.length >= 6) {
-                                val list = t.toMutableList()
-                                list.add(0, Triple(
-                                    n.text.toString().ifBlank { "Sin nombre" },
-                                    num.text.toString(),
-                                    amt.text.toString()
-                                ))
-                                p.saveTemplates(list)
-                            }
-                        }.setNegativeButton("Cancelar", null).show()
-                }.setNegativeButton("Cerrar", null).show()
+        b.btnExportFav.setOnClickListener {
+            val json = p.exportFavoritesJson()
+            val clipboard = requireContext().getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
+            clipboard.setPrimaryClip(android.content.ClipData.newPlainText("favoritos", json))
+            Toast.makeText(requireContext(), "Favoritos copiados al portapapeles", Toast.LENGTH_SHORT).show()
         }
-
-        b.btnExport.setOnClickListener {
-            act.copyRaw(p.exportFavoritesJson())
-            Toast.makeText(requireContext(), "JSON de favoritos copiado", Toast.LENGTH_LONG).show()
-        }
-
-        b.btnImport.setOnClickListener {
+        b.btnImportFav.setOnClickListener {
             val et = EditText(requireContext()).apply {
-                hint = "Pega el JSON aquí"; minLines = 4; setPadding(32, 24, 32, 16)
+                hint = "JSON de favoritos"
+                minLines = 4
+                setPadding(48, 24, 48, 16)
             }
-            AlertDialog.Builder(requireContext()).setTitle("Importar favoritos").setView(et)
+            AlertDialog.Builder(requireContext()).setTitle("Importar favoritos")
+                .setView(et)
                 .setPositiveButton("Importar") { _, _ ->
                     val n = p.importFavoriteIds(et.text.toString())
                     Toast.makeText(requireContext(), "Importados: $n", Toast.LENGTH_SHORT).show()
@@ -447,33 +408,21 @@ class SettingsFragment : Fragment() {
                 }.setNegativeButton("Cancelar", null).show()
         }
 
-        b.btnChecklist.setOnClickListener {
+        b.btnAbout.setOnClickListener {
             AlertDialog.Builder(requireContext())
-                .setTitle("Después de recargar")
-                .setMessage(
-                    "1. Marca *222# — verifica saldo\n" +
-                    "2. Marca *222*732# — límite nacional 360 CUP\n" +
-                    "3. Si compraste plan: *222*328# datos / *133# menú"
-                )
-                .setPositiveButton("*222#") { _, _ ->
-                    CodesRepository.allCodes.find { it.id == "c1" }?.let { act.handleCodeClick(it) }
-                }
-                .setNeutralButton("*222*732#") { _, _ ->
-                    CodesRepository.allCodes.find { it.id == "c6" }?.let { act.handleCodeClick(it) }
-                }
-                .setNegativeButton("Cerrar", null).show()
+                .setTitle("USSD Cuba")
+                .setMessage("Códigos USSD de ETECSA.\nVersión ${BuildConfig.VERSION_NAME}\n\nLos códigos pueden cambiar; verifica en el portal oficial.")
+                .setPositiveButton("Cerrar", null)
+                .show()
         }
     }
 
     private fun ensureOverlayPerm(): Boolean {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M &&
-            !Settings.canDrawOverlays(requireContext())
-        ) {
-            Toast.makeText(requireContext(), "Activa «Mostrar sobre otras apps»", Toast.LENGTH_LONG).show()
-            openOverlaySettings()
-            return false
-        }
-        return true
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) return true
+        if (Settings.canDrawOverlays(requireContext())) return true
+        Toast.makeText(requireContext(), "Concede permiso de ventanas flotantes", Toast.LENGTH_LONG).show()
+        openOverlaySettings()
+        return false
     }
 
     private fun openOverlaySettings() {
@@ -488,33 +437,23 @@ class SettingsFragment : Fragment() {
     }
 
     private fun syncOverlays(act: MainActivity) {
-        val p = act.prefs
-        if (p.getShowFloatingTime() || p.getShowSpeedMonitor()) {
-            OverlayService.start(requireContext())
-            OverlayService.refresh(requireContext())
-        } else {
-            OverlayService.stop(requireContext())
-        }
+        val show = act.prefs.getShowFloatingTime() || act.prefs.getShowSpeedMonitor()
+        if (show) OverlayService.start(requireContext()) else OverlayService.stop(requireContext())
     }
 
     private fun pickNotifCodes(act: MainActivity) {
-        val all = CodesRepository.allCodes.filter { !it.needsParams }
-        val labels = all.map { "${it.title}  ${it.code}" }.toTypedArray()
-        val current = act.prefs.getNotifShortcutIds().toMutableSet()
-        val checked = BooleanArray(all.size) { i -> all[i].id in current }
+        val all = CodesRepository.allCodes
+        val selected = act.prefs.getNotifShortcutIds().toMutableSet()
+        val labels = all.map { "${it.title} (${it.code})" }.toTypedArray()
+        val checked = BooleanArray(all.size) { all[it].id in selected }
         AlertDialog.Builder(requireContext())
             .setTitle("Códigos en notificación (máx. 4)")
             .setMultiChoiceItems(labels, checked) { _, which, isChecked ->
-                checked[which] = isChecked
+                if (isChecked) selected.add(all[which].id) else selected.remove(all[which].id)
             }
             .setPositiveButton("Guardar") { _, _ ->
-                val ids = mutableListOf<String>()
-                checked.forEachIndexed { i, on -> if (on) ids.add(all[i].id) }
-                act.prefs.setNotifShortcutIds(ids.take(4))
-                if (act.prefs.getShowNotifShortcuts()) {
-                    QuickAccessHelper.show(requireContext(), act.prefs)
-                }
-                Toast.makeText(requireContext(), "${ids.take(4).size} códigos", Toast.LENGTH_SHORT).show()
+                act.prefs.setNotifShortcutIds(selected.toList())
+                if (act.prefs.getShowNotifShortcuts()) QuickAccessHelper.show(requireContext(), act.prefs)
             }
             .setNegativeButton("Cancelar", null)
             .show()
@@ -522,71 +461,71 @@ class SettingsFragment : Fragment() {
 
     private fun showSpeedConfig(act: MainActivity) {
         val p = act.prefs
-        val items = arrayOf(
-            "Unidad: ${when (p.getSpeedUnit()) { 0 -> "KB/s"; 1 -> "MB/s"; else -> "Auto" }}",
-            "Intervalo: ${p.getSpeedIntervalMs()} ms",
-            "Mostrar subida: ${if (p.getSpeedShowUpload()) "Sí" else "No"}",
-            "Opacidad overlay: ${p.getOverlayOpacity()}",
-            "Tamaño texto: ${p.getOverlayTextSizeSp()} sp",
-            "Restablecer posición overlay"
-        )
-        AlertDialog.Builder(requireContext())
-            .setTitle("Monitor de velocidad")
-            .setItems(items) { _, which ->
-                when (which) {
-                    0 -> {
-                        val units = arrayOf("KB/s", "MB/s", "Auto")
-                        AlertDialog.Builder(requireContext()).setTitle("Unidad")
-                            .setItems(units) { _, u ->
-                                p.setSpeedUnit(u)
-                                OverlayService.refresh(requireContext())
-                            }.show()
-                    }
-                    1 -> {
-                        val opts = arrayOf("500 ms", "1000 ms", "2000 ms", "3000 ms")
-                        AlertDialog.Builder(requireContext()).setTitle("Intervalo de actualización")
-                            .setItems(opts) { _, i ->
-                                p.setSpeedIntervalMs(listOf(500, 1000, 2000, 3000)[i])
-                                OverlayService.refresh(requireContext())
-                            }.show()
-                    }
-                    2 -> {
-                        p.setSpeedShowUpload(!p.getSpeedShowUpload())
-                        OverlayService.refresh(requireContext())
-                        Toast.makeText(requireContext(),
-                            if (p.getSpeedShowUpload()) "Subida visible" else "Solo bajada",
-                            Toast.LENGTH_SHORT).show()
-                    }
-                    3 -> {
-                        val opts = arrayOf("Baja (120)", "Media (180)", "Alta (220)", "Máxima (255)")
-                        AlertDialog.Builder(requireContext()).setTitle("Opacidad")
-                            .setItems(opts) { _, i ->
-                                p.setOverlayOpacity(listOf(120, 180, 220, 255)[i])
-                                OverlayService.refresh(requireContext())
-                            }.show()
-                    }
-                    4 -> {
-                        val opts = arrayOf("10", "12", "14", "16", "18", "20")
-                        AlertDialog.Builder(requireContext()).setTitle("Tamaño texto (sp)")
-                            .setItems(opts) { _, i ->
-                                p.setOverlayTextSizeSp(listOf(10, 12, 14, 16, 18, 20)[i])
-                                OverlayService.stop(requireContext())
-                                if (p.getShowSpeedMonitor() || p.getShowFloatingTime())
-                                    OverlayService.start(requireContext())
-                            }.show()
-                    }
-                    5 -> {
-                        p.setOverlayX(40)
-                        p.setOverlayY(200)
-                        OverlayService.stop(requireContext())
-                        if (p.getShowSpeedMonitor() || p.getShowFloatingTime())
-                            OverlayService.start(requireContext())
-                        Toast.makeText(requireContext(), "Posición restablecida", Toast.LENGTH_SHORT).show()
-                    }
+        val box = LinearLayout(requireContext()).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(48, 24, 48, 8)
+        }
+        val units = arrayOf("KB/s", "MB/s", "Auto")
+        val unitLabel = android.widget.TextView(requireContext()).apply {
+            text = "Unidad: ${units[p.getSpeedUnit()]}"
+            setPadding(0, 8, 0, 8)
+        }
+        box.addView(unitLabel)
+        val unitSpinner = android.widget.Spinner(requireContext()).apply {
+            adapter = ArrayAdapter(requireContext(), android.R.layout.simple_spinner_dropdown_item, units.toList())
+            setSelection(p.getSpeedUnit())
+        }
+        box.addView(unitSpinner)
+        val intervalLabel = android.widget.TextView(requireContext()).apply {
+            text = "Intervalo (ms): ${p.getSpeedIntervalMs()}"
+            setPadding(0, 16, 0, 8)
+        }
+        box.addView(intervalLabel)
+        val intervalEt = EditText(requireContext()).apply {
+            inputType = InputType.TYPE_CLASS_NUMBER
+            setText(p.getSpeedIntervalMs().toString())
+        }
+        box.addView(intervalEt)
+        val showUp = android.widget.CheckBox(requireContext()).apply {
+            text = "Mostrar subida"
+            isChecked = p.getSpeedShowUpload()
+        }
+        box.addView(showUp)
+        val opacityLabel = android.widget.TextView(requireContext()).apply {
+            text = "Opacidad overlay: ${p.getOverlayOpacity()}"
+            setPadding(0, 16, 0, 8)
+        }
+        box.addView(opacityLabel)
+        val opacityEt = EditText(requireContext()).apply {
+            inputType = InputType.TYPE_CLASS_NUMBER
+            setText(p.getOverlayOpacity().toString())
+            hint = "80–255"
+        }
+        box.addView(opacityEt)
+        val sizeLabel = android.widget.TextView(requireContext()).apply {
+            text = "Tamaño texto (sp): ${p.getOverlayTextSizeSp()}"
+            setPadding(0, 16, 0, 8)
+        }
+        box.addView(sizeLabel)
+        val sizeEt = EditText(requireContext()).apply {
+            inputType = InputType.TYPE_CLASS_NUMBER
+            setText(p.getOverlayTextSizeSp().toString())
+            hint = "10–22"
+        }
+        box.addView(sizeEt)
+        AlertDialog.Builder(requireContext()).setTitle("Monitor de velocidad")
+            .setView(box)
+            .setPositiveButton("Guardar") { _, _ ->
+                p.setSpeedUnit(unitSpinner.selectedItemPosition)
+                p.setSpeedIntervalMs(intervalEt.text.toString().toIntOrNull() ?: 1000)
+                p.setSpeedShowUpload(showUp.isChecked)
+                p.setOverlayOpacity(opacityEt.text.toString().toIntOrNull() ?: 180)
+                p.setOverlayTextSizeSp(sizeEt.text.toString().toIntOrNull() ?: 14)
+                if (p.getShowSpeedMonitor() || p.getShowFloatingTime()) {
+                    OverlayService.start(requireContext())
                 }
-            }
-            .setNegativeButton("Cerrar", null)
-            .show()
+                Toast.makeText(requireContext(), "Guardado", Toast.LENGTH_SHORT).show()
+            }.setNegativeButton("Cancelar", null).show()
     }
 
     override fun onDestroyView() { super.onDestroyView(); _b = null }
