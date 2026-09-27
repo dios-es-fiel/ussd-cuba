@@ -51,25 +51,31 @@ class HomeFragment : Fragment() {
 
     private fun ad(act: MainActivity) = UssdAdapter(
         { act.handleCodeClick(it) }, { act.copyCode(it) },
-        { act.toggleFavorite(it) }, { act.prefs.isFavorite(it) }
+        { act.toggleFavorite(it) }, { act.prefs.isFavorite(it) },
+        { ThemeHelper.uiStyle(act.prefs.getUiStyleId()) }
     )
 
     private fun setupShortcuts() {
         val act = requireActivity() as MainActivity
         val grid = b.gridShortcuts
         grid.removeAllViews()
+        val style = ThemeHelper.uiStyle(act.prefs.getUiStyleId())
+        val density = resources.displayMetrics.density
         val icons = listOf("💰", "📡", "📦", "🔄")
         val codes = act.prefs.getShortcutIds()
             .mapNotNull { id -> CodesRepository.allCodes.find { it.id == id } }
             .ifEmpty { CodesRepository.shortcuts }
         codes.forEachIndexed { i, code ->
             val item = layoutInflater.inflate(R.layout.item_shortcut, grid, false) as MaterialCardView
+            item.radius = style.cornerRadiusDp * density
+            item.cardElevation = style.cardElevationDp * density
             item.layoutParams = GridLayout.LayoutParams().apply {
                 width = 0
                 height = ViewGroup.LayoutParams.WRAP_CONTENT
                 columnSpec = GridLayout.spec(i % 2, 1f)
                 rowSpec = GridLayout.spec(i / 2)
-                setMargins(6, 6, 6, 6)
+                val m = (6 * density).toInt()
+                setMargins(m, m, m, m)
             }
             item.findViewById<TextView>(R.id.tvIcon).text = icons.getOrElse(i) { "☆" }
             item.findViewById<TextView>(R.id.tvLabel).text = when (code.id) {
@@ -147,7 +153,8 @@ class ListFragment : Fragment() {
         val act = requireActivity() as MainActivity
         adapter = UssdAdapter(
             { act.handleCodeClick(it) }, { act.copyCode(it) },
-            { act.toggleFavorite(it) }, { act.prefs.isFavorite(it) }
+            { act.toggleFavorite(it) }, { act.prefs.isFavorite(it) },
+            { ThemeHelper.uiStyle(act.prefs.getUiStyleId()) }
         )
         b.recyclerView.layoutManager = LinearLayoutManager(requireContext())
         b.recyclerView.adapter = adapter
