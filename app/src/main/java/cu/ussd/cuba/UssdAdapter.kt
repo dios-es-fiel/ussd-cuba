@@ -33,7 +33,6 @@ class UssdAdapter(
         b.tvTitle.text = item.title
         b.tvCode.text = item.code.replace(Regex("\\{[^}]+\\}"), "…")
         b.tvDescription.text = item.description
-        b.tvCategory.text = item.category
 
         val fav = isFavorite(item.id)
         b.btnFavorite.setImageResource(

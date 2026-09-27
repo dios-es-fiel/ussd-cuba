@@ -1,12 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <style name="Theme.UssdCuba" parent="Theme.Material3.DayNight.NoActionBar">
+    <style name="Theme.UssdCuba" parent="Theme.Material3.Dark.NoActionBar">
         <item name="colorPrimary">#EF5350</item>
         <item name="colorPrimaryContainer">#5C1A1A</item>
         <item name="colorOnPrimary">#FFFFFF</item>
+        <item name="colorOnPrimaryContainer">#FFCDD2</item>
         <item name="colorSecondary">#42A5F5</item>
         <item name="colorOnSecondary">#FFFFFF</item>
-        <item name="android:statusBarColor">#1A1A1A</item>
+        <item name="colorSurface">#121212</item>
+        <item name="colorSurfaceContainer">#1E1E1E</item>
+        <item name="colorOnSurface">#E8E8E8</item>
+        <item name="colorOnSurfaceVariant">#A0A0A0</item>
+        <item name="colorOutlineVariant">#333333</item>
+        <item name="android:statusBarColor">#121212</item>
         <item name="android:navigationBarColor">#121212</item>
+        <item name="android:windowBackground">#121212</item>
     </style>
 </resources>

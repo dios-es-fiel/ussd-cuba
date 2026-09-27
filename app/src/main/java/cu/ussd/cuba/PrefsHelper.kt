@@ -36,8 +36,7 @@ class PrefsHelper(context: Context) {
         val list = getRecents().toMutableList()
         list.remove(id)
         list.add(0, id)
-        val trimmed = list.take(10)
-        prefs.edit().putString("recents", trimmed.joinToString(",")).apply()
+        prefs.edit().putString("recents", list.take(10).joinToString(",")).apply()
     }
 
     fun getConfirmBeforeDial(): Boolean =
@@ -45,5 +44,11 @@ class PrefsHelper(context: Context) {
 
     fun setConfirmBeforeDial(value: Boolean) {
         prefs.edit().putBoolean("confirm_before_dial", value).apply()
+    }
+
+    fun getThemeMode(): String = prefs.getString("theme_mode", "dark") ?: "dark"
+
+    fun setThemeMode(mode: String) {
+        prefs.edit().putString("theme_mode", mode).apply()
     }
 }
