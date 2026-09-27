@@ -50,6 +50,58 @@
             android:layout_height="wrap_content" android:text="Desactivar deslizamiento entre pestañas"
             android:paddingVertical="8dp" android:layout_marginBottom="16dp" />
 
+        <!-- Accesos en notificación -->
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:text="Barra de notificaciones" android:textStyle="bold" android:textSize="13sp"
+            android:textColor="?attr/colorPrimary" android:layout_marginBottom="8dp" />
+
+        <androidx.appcompat.widget.SwitchCompat
+            android:id="@+id/switchNotifShortcuts" android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Mostrar accesos rápidos (3–4 códigos)"
+            android:paddingVertical="8dp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnNotifCodes" style="@style/Widget.Material3.Button.TonalButton"
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:text="Elegir códigos de la notificación"
+            android:layout_marginBottom="16dp" />
+
+        <!-- Overlays WiFi / velocidad -->
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:text="Overlays en pantalla" android:textStyle="bold" android:textSize="13sp"
+            android:textColor="?attr/colorPrimary" android:layout_marginBottom="8dp" />
+
+        <androidx.appcompat.widget.SwitchCompat
+            android:id="@+id/switchFloatTime" android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Tiempo restante flotante (sesión WiFi)"
+            android:paddingVertical="8dp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnSetSessionTime" style="@style/Widget.Material3.Button.TonalButton"
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:text="Definir duración de sesión"
+            android:layout_marginBottom="8dp" />
+
+        <androidx.appcompat.widget.SwitchCompat
+            android:id="@+id/switchSpeed" android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Monitor de velocidad en tiempo real"
+            android:paddingVertical="8dp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnSpeedConfig" style="@style/Widget.Material3.Button.TonalButton"
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:text="Configurar monitor de velocidad"
+            android:layout_marginBottom="8dp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnOverlayPerm" style="@style/Widget.Material3.Button.OutlinedButton"
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:text="Permitir ventanas flotantes"
+            android:layout_marginBottom="16dp" />
+
         <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
             android:text="Datos" android:textStyle="bold" android:textSize="13sp"
             android:textColor="?attr/colorPrimary" android:layout_marginBottom="8dp" />
