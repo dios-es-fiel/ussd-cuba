@@ -50,7 +50,6 @@
             android:layout_height="wrap_content" android:text="Desactivar deslizamiento entre pestañas"
             android:paddingVertical="8dp" android:layout_marginBottom="16dp" />
 
-        <!-- Accesos en notificación -->
         <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
             android:text="Barra de notificaciones" android:textStyle="bold" android:textSize="13sp"
             android:textColor="?attr/colorPrimary" android:layout_marginBottom="8dp" />
@@ -67,21 +66,39 @@
             android:text="Elegir códigos de la notificación"
             android:layout_marginBottom="16dp" />
 
-        <!-- Overlays WiFi / velocidad -->
+        <!-- Cuenta Nauta + overlays -->
         <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:text="Overlays en pantalla" android:textStyle="bold" android:textSize="13sp"
+            android:text="Cuenta Nauta / WiFi" android:textStyle="bold" android:textSize="13sp"
             android:textColor="?attr/colorPrimary" android:layout_marginBottom="8dp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnNautaAccount" style="@style/Widget.Material3.Button.TonalButton"
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:text="Guardar usuario y contraseña Nauta"
+            android:layout_marginBottom="6dp" />
+
+        <androidx.appcompat.widget.SwitchCompat
+            android:id="@+id/switchNautaReal" android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Tiempo real de la cuenta Nauta (portal ETECSA)"
+            android:paddingVertical="8dp" />
 
         <androidx.appcompat.widget.SwitchCompat
             android:id="@+id/switchFloatTime" android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Tiempo restante flotante (sesión WiFi)"
+            android:text="Mostrar tiempo restante flotante"
             android:paddingVertical="8dp" />
 
         <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnSetSessionTime" style="@style/Widget.Material3.Button.TonalButton"
+            android:id="@+id/btnSyncNauta" style="@style/Widget.Material3.Button.TonalButton"
             android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:text="Definir duración de sesión"
+            android:text="Sincronizar tiempo Nauta ahora"
+            android:layout_marginBottom="6dp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnSetSessionTime" style="@style/Widget.Material3.Button.OutlinedButton"
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:text="Contador manual (si no hay cuenta Nauta)"
             android:layout_marginBottom="8dp" />
 
         <androidx.appcompat.widget.SwitchCompat
