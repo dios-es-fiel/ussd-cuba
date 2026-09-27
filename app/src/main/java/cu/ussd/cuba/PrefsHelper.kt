@@ -74,6 +74,10 @@ class PrefsHelper(context: Context) {
     fun getPaletteId() = prefs.getString("palette_id", "cuba") ?: "cuba"
     fun setPaletteId(id: String) = prefs.edit().putString("palette_id", id).apply()
 
+    /** Estilo de interfaz: clasico | minimalista | profesional | compacto | comodo | tarjetas */
+    fun getUiStyleId() = prefs.getString("ui_style", "clasico") ?: "clasico"
+    fun setUiStyleId(id: String) = prefs.edit().putString("ui_style", id).apply()
+
     fun getSavedPin() = prefs.getString("transfer_pin", "") ?: ""
     fun setSavedPin(pin: String) = prefs.edit().putString("transfer_pin", pin).apply()
 
@@ -217,7 +221,6 @@ class PrefsHelper(context: Context) {
     fun getOverlayY() = prefs.getInt("overlay_y", 200)
     fun setOverlayY(v: Int) = prefs.edit().putInt("overlay_y", v).apply()
 
-    // ── Nauta real time ──
     fun getNautaUser() = prefs.getString("nauta_user", "") ?: ""
     fun setNautaUser(v: String) = prefs.edit().putString("nauta_user", v.trim()).apply()
 
@@ -227,7 +230,6 @@ class PrefsHelper(context: Context) {
     fun getNautaUuid() = prefs.getString("nauta_uuid", "") ?: ""
     fun setNautaUuid(v: String) = prefs.edit().putString("nauta_uuid", v).apply()
 
-    /** true = consultar portal Nauta; false = contador manual */
     fun getUseNautaRealTime() = prefs.getBoolean("nauta_real_time", true)
     fun setUseNautaRealTime(v: Boolean) = prefs.edit().putBoolean("nauta_real_time", v).apply()
 
@@ -237,7 +239,6 @@ class PrefsHelper(context: Context) {
     fun getNautaLastSyncMs() = prefs.getLong("nauta_last_sync", 0L)
     fun setNautaLastSyncMs(ms: Long) = prefs.edit().putLong("nauta_last_sync", ms).apply()
 
-    /** Intervalo de reconsulta al servidor (segundos), default 30 */
     fun getNautaSyncIntervalSec() = prefs.getInt("nauta_sync_sec", 30).coerceIn(15, 120)
     fun setNautaSyncIntervalSec(s: Int) = prefs.edit().putInt("nauta_sync_sec", s.coerceIn(15, 120)).apply()
 }
