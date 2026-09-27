@@ -6,7 +6,7 @@ import androidx.recyclerview.widget.RecyclerView
 import cu.ussd.cuba.databinding.ItemUssdBinding
 
 class UssdAdapter(
-    private val items: List<UssdCode>,
+    private var items: List<UssdCode>,
     private val onClick: (UssdCode) -> Unit
 ) : RecyclerView.Adapter<UssdAdapter.ViewHolder>() {
 
@@ -22,8 +22,14 @@ class UssdAdapter(
         holder.binding.tvTitle.text = item.title
         holder.binding.tvCode.text = item.code
         holder.binding.tvDescription.text = item.description
+        holder.binding.tvCategory.text = item.category
         holder.binding.root.setOnClickListener { onClick(item) }
     }
 
     override fun getItemCount() = items.size
+
+    fun updateList(newItems: List<UssdCode>) {
+        items = newItems
+        notifyDataSetChanged()
+    }
 }

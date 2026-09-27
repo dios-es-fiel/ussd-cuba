@@ -1,45 +1,41 @@
-# Códigos USSD Cuba (ETECSA)
+# Códigos USSD Cuba (ETECSA) v1.1
 
-App Android completa con los códigos USSD más usados de ETECSA en Cuba.
+App Android con **50+ códigos USSD** de ETECSA, Transfermóvil y emergencias.
 
-## Características
-
-- Lista completa de códigos USSD actualizados (consulta de saldo, planes, recargas, desvíos, emergencias, etc.)
-- Toca cualquier código para marcarlo directamente
-- Interfaz moderna Material Design 3
-- Colores inspirados en la bandera de Cuba
-
-## Códigos incluidos
-
-| Código | Descripción |
-|--------|-------------|
-| `*222#` | Saldo principal + recursos |
-| `*222*328#` | Plan de datos |
-| `*222*266#` | Bonos y planes USD |
-| `*222*869#` | Plan de voz |
-| `*222*767#` | Plan de SMS |
-| `*222*732#` | Estado recargas nacionales |
-| `*133#` | Comprar planes |
-| `*234#` | Transferir / Adelanta saldo |
-| `*666` | Recargar con tarjeta |
-| Y muchos más...
+## Novedades v1.1
+- Más códigos (inspirados en UtilEs / QvaCall)
+- **Búsqueda** en tiempo real
+- **Categorías** con chips: Consultas, Planes, Recargas, Llamadas, Internacional, Transfermóvil, Emergencias...
+- Diseño mejorado (cards, badges de categoría)
+- Códigos de Transfermóvil por USSD (para teléfonos sin app)
 
 ## Descargar APK
 
-1. Ve a la pestaña **Actions** de este repositorio
-2. Selecciona el último workflow **Build APK**
-3. Descarga el artifact **ussd-cuba-apk**
+1. Ve a **Actions** → último workflow exitoso  
+   https://github.com/luiseilerys/ussd-cuba/actions
+2. Descarga el artifact **ussd-cuba-apk**
+3. Descomprime e instala el `.apk`
 
-O espera a que se genere automáticamente tras cada push a `main`.
+## Códigos principales
 
-## Compilar localmente
+| Código | Uso |
+|--------|-----|
+| `*222#` | Saldo + recursos |
+| `*222*328#` | Datos |
+| `*222*266#` | Bonos / USD |
+| `*222*869#` | Voz |
+| `*222*767#` | SMS |
+| `*222*732#` | Límite recargas nacionales |
+| `*133#` | Comprar planes |
+| `*234#` | Transferir / Adelanta saldo |
+| `*666` | Recargar tarjeta |
+| `*99` | Cobro revertido |
+| `*#06#` | IMEI |
+| `*444*46#` | Saldo Transfermóvil |
+
+## Compilar
 
 ```bash
+gradle wrapper --gradle-version 8.2
 ./gradlew assembleDebug
 ```
-
-El APK quedará en `app/build/outputs/apk/debug/`.
-
-## Licencia
-
-Uso libre. Los códigos USSD pertenecen a ETECSA.
