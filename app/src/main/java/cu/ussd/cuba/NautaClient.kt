@@ -19,10 +19,6 @@ import javax.net.ssl.X509TrustManager
 /**
  * Cliente para el portal cautivo Nauta (secure.etecsa.net:8443).
  * Obtiene tiempo restante real de la cuenta.
- *
- * Flujo típico:
- * 1. Con credenciales → POST EtecsaQueryServlet → parsear tiempo disponible
- * 2. Con sesión activa (ATTRIBUTE_UUID) → GET getLeftTime
  */
 object NautaClient {
 
@@ -32,7 +28,7 @@ object NautaClient {
     private const val TIMEOUT_MS = 12_000
 
     data class AccountInfo(
-        val remainingTime: String,   // "HH:MM:SS" o "MM:SS"
+        val remainingTime: String,
         val remainingSeconds: Long,
         val credit: String? = null,
         val raw: String = ""
@@ -42,11 +38,9 @@ object NautaClient {
         trustAllSsl()
     }
 
-    /** Consulta tiempo restante con usuario+contraseña (funciona sin estar logueado en WiFi). */
     fun fetchRemainingWithCredentials(username: String, password: String): AccountInfo? {
         if (username.isBlank() || password.isBlank()) return null
         return try {
-            // 1) GET página principal para cookies / CSRF
             val getConn = open("$BASE/")
             getConn.requestMethod = "GET"
             val getBody = readBody(getConn)
@@ -55,7 +49,6 @@ object NautaClient {
             val csrf = extractHidden(getBody, "CSRFHW") ?: ""
             val wlan = extractHidden(getBody, "wlanuserip") ?: ""
 
-            // 2) POST a EtecsaQueryServlet (información de usuario)
             val params = buildString {
                 append("username=").append(enc(username))
                 append("&password=").append(enc(password))
@@ -77,10 +70,6 @@ object NautaClient {
         }
     }
 
-    /**
-     * Tiempo restante mientras hay sesión activa en WIFI_ETECSA.
-     * Requiere ATTRIBUTE_UUID obtenido al loguearse.
-     */
     fun fetchLeftTimeSession(username: String, attributeUuid: String): AccountInfo? {
         if (username.isBlank() || attributeUuid.isBlank()) return null
         return try {
@@ -88,7 +77,6 @@ object NautaClient {
             val conn = open(url)
             conn.requestMethod = "GET"
             val text = readBody(conn).trim()
-            // Respuesta típica: "02:14:24" o similar
             val secs = parseTimeToSeconds(text)
             if (secs >= 0 && text.matches(Regex("[0-9:]+"))) {
                 AccountInfo(text, secs, raw = text)
@@ -99,7 +87,6 @@ object NautaClient {
         }
     }
 
-    /** Variante antigua: op=getLeftTime&op1=username (sin UUID). */
     fun fetchLeftTimeSimple(username: String): AccountInfo? {
         if (username.isBlank()) return null
         return try {
@@ -117,12 +104,6 @@ object NautaClient {
         }
     }
 
-    /**
-     * Estrategia combinada:
-     * 1. Si hay UUID de sesión → getLeftTime con UUID
-     * 2. Si no → consulta con usuario/clave (página de info)
-     * 3. Fallback op1 simple
-     */
     fun fetchBest(
         username: String,
         password: String,
@@ -136,10 +117,12 @@ object NautaClient {
     }
 
     private fun parseAccountPage(html: String): AccountInfo? {
-        // Buscar patrones de tiempo: HH:MM:SS o H:MM:SS cerca de "tiempo" / "disponible"
+        // Raw strings: \s is valid regex whitespace without illegal Kotlin escapes
         val timePatterns = listOf(
-            Pattern.compile("(?i)(?:tiempo\s*(?:disponible|restante)|available\s*time)[^0-9]{0,40}([0-9]{1,3}:[0-9]{2}:[0-9]{2})"),
-            Pattern.compile("(?i)([0-9]{1,3}:[0-9]{2}:[0-9]{2})")
+            Pattern.compile(
+                """(?i)(?:tiempo\s*(?:disponible|restante)|available\s*time)[^0-9]{0,40}([0-9]{1,3}:[0-9]{2}:[0-9]{2})"""
+            ),
+            Pattern.compile("""(?i)([0-9]{1,3}:[0-9]{2}:[0-9]{2})""")
         )
         var timeStr: String? = null
         for (p in timePatterns) {
@@ -154,7 +137,9 @@ object NautaClient {
         if (secs < 0) return null
 
         var credit: String? = null
-        val creditPat = Pattern.compile("(?i)(?:saldo|credit|crédito)[^0-9\\.]{0,30}([0-9]+(?:[.,][0-9]+)?)")
+        val creditPat = Pattern.compile(
+            """(?i)(?:saldo|credit|crédito)[^0-9.]{0,30}([0-9]+(?:[.,][0-9]+)?)"""
+        )
         val cm = creditPat.matcher(html)
         if (cm.find()) credit = cm.group(1)
 
@@ -186,8 +171,7 @@ object NautaClient {
 
     private fun extractHidden(html: String, name: String): String? {
         val p = Pattern.compile(
-            "(?i)<input[^>]*name=[\"']?$name[\"']?[^>]*value=[\"']([^\"']*)[\"']" +
-                "|<input[^>]*value=[\"']([^\"']*)[\"'][^>]*name=[\"']?$name[\"']?"
+            """(?i)<input[^>]*name=["']?$name["']?[^>]*value=["']([^"']*)["']|<input[^>]*value=["']([^"']*)["'][^>]*name=["']?$name["']?"""
         )
         val m = p.matcher(html)
         return if (m.find()) m.group(1) ?: m.group(2) else null
@@ -214,7 +198,6 @@ object NautaClient {
 
     private fun enc(s: String) = URLEncoder.encode(s, "UTF-8")
 
-    /** ETECSA usa certificados que a menudo fallan la validación estándar. */
     private fun trustAllSsl() {
         try {
             val trustAll = arrayOf<TrustManager>(object : X509TrustManager {
