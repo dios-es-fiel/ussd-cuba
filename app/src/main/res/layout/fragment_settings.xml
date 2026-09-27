@@ -30,22 +30,25 @@
             android:text="Comportamiento" android:textStyle="bold" android:textSize="13sp"
             android:textColor="?attr/colorPrimary" android:layout_marginBottom="8dp" />
 
-        <com.google.android.material.materialswitch.MaterialSwitch
+        <androidx.appcompat.widget.SwitchCompat
             android:id="@+id/switchConfirm" android:layout_width="match_parent"
-            android:layout_height="wrap_content" android:text="Confirmar antes de marcar" />
+            android:layout_height="wrap_content" android:text="Confirmar antes de marcar"
+            android:paddingVertical="8dp" />
 
-        <com.google.android.material.materialswitch.MaterialSwitch
+        <androidx.appcompat.widget.SwitchCompat
             android:id="@+id/switchCopy" android:layout_width="match_parent"
-            android:layout_height="wrap_content" android:text="Solo copiar (no abrir marcador)" />
+            android:layout_height="wrap_content" android:text="Solo copiar (no abrir marcador)"
+            android:paddingVertical="8dp" />
 
-        <com.google.android.material.materialswitch.MaterialSwitch
+        <androidx.appcompat.widget.SwitchCompat
             android:id="@+id/switchCall" android:layout_width="match_parent"
-            android:layout_height="wrap_content" android:text="Usar llamada directa (CALL) si hay permiso" />
+            android:layout_height="wrap_content" android:text="Usar llamada directa (CALL) si hay permiso"
+            android:paddingVertical="8dp" />
 
-        <com.google.android.material.materialswitch.MaterialSwitch
+        <androidx.appcompat.widget.SwitchCompat
             android:id="@+id/switchSwipe" android:layout_width="match_parent"
             android:layout_height="wrap_content" android:text="Desactivar deslizamiento entre pestañas"
-            android:layout_marginBottom="16dp" />
+            android:paddingVertical="8dp" android:layout_marginBottom="16dp" />
 
         <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
             android:text="Datos" android:textStyle="bold" android:textSize="13sp"

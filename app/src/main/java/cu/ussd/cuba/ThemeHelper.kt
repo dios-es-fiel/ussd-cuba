@@ -2,6 +2,7 @@ package cu.ussd.cuba
 
 import android.app.Activity
 import android.content.Context
+import android.content.res.Configuration
 import androidx.appcompat.app.AppCompatDelegate
 
 object ThemeHelper {
@@ -25,10 +26,13 @@ object ThemeHelper {
     )
 
     fun applyNightMode(prefs: PrefsHelper) {
-        when (prefs.getThemeMode()) {
-            "light" -> AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
-            "system" -> AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM)
-            else -> AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
+        val mode = when (prefs.getThemeMode()) {
+            "light" -> AppCompatDelegate.MODE_NIGHT_NO
+            "system" -> AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM
+            else -> AppCompatDelegate.MODE_NIGHT_YES
+        }
+        if (AppCompatDelegate.getDefaultNightMode() != mode) {
+            AppCompatDelegate.setDefaultNightMode(mode)
         }
     }
 
@@ -43,18 +47,28 @@ object ThemeHelper {
         }
     }
 
-    fun isDark(context: Context): Boolean {
+    /** Prefer prefs over configuration to avoid race before super.onCreate */
+    fun isDark(context: Context, prefs: PrefsHelper? = null): Boolean {
+        if (prefs != null) {
+            return when (prefs.getThemeMode()) {
+                "light" -> false
+                "dark" -> true
+                else -> {
+                    val night = context.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK
+                    night == Configuration.UI_MODE_NIGHT_YES
+                }
+            }
+        }
         val mode = AppCompatDelegate.getDefaultNightMode()
         if (mode == AppCompatDelegate.MODE_NIGHT_YES) return true
         if (mode == AppCompatDelegate.MODE_NIGHT_NO) return false
-        val night = context.resources.configuration.uiMode and
-                android.content.res.Configuration.UI_MODE_NIGHT_MASK
-        return night == android.content.res.Configuration.UI_MODE_NIGHT_YES
+        val night = context.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK
+        return night == Configuration.UI_MODE_NIGHT_YES
     }
 
     fun applyToActivity(activity: Activity, prefs: PrefsHelper) {
         applyNightMode(prefs)
-        val dark = isDark(activity)
+        val dark = isDark(activity, prefs)
         activity.setTheme(paletteStyle(prefs.getPaletteId(), dark))
     }
 }

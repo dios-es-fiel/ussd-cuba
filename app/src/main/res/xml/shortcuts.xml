@@ -3,7 +3,7 @@
     <shortcut
         android:shortcutId="saldo"
         android:enabled="true"
-        android:icon="@mipmap/ic_launcher"
+        android:icon="@drawable/ic_launcher"
         android:shortcutShortLabel="@string/shortcut_saldo"
         android:shortcutLongLabel="@string/shortcut_saldo_long">
         <intent
@@ -16,7 +16,7 @@
     <shortcut
         android:shortcutId="datos"
         android:enabled="true"
-        android:icon="@mipmap/ic_launcher"
+        android:icon="@drawable/ic_launcher"
         android:shortcutShortLabel="@string/shortcut_datos">
         <intent
             android:action="cu.ussd.cuba.DIAL"
