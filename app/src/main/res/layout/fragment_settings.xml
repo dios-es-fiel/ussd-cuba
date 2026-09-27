@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.core.widget.NestedScrollView
     xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="?attr/colorSurface"
@@ -12,74 +13,175 @@
         android:orientation="vertical"
         android:paddingBottom="24dp">
 
-        <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:text="Apariencia" android:textStyle="bold" android:textSize="13sp"
-            android:textColor="?attr/colorPrimary" android:layout_marginBottom="8dp" />
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Apariencia"
+            android:textStyle="bold"
+            android:textSize="13sp"
+            android:textColor="?attr/colorPrimary"
+            android:layout_marginBottom="8dp" />
 
-        <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:text="Tema" android:textSize="12sp" android:textColor="?attr/colorOnSurfaceVariant" />
-        <Spinner android:id="@+id/spinnerTheme" android:layout_width="match_parent"
-            android:layout_height="48dp" android:layout_marginBottom="12dp" />
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Tema"
+            android:textSize="12sp"
+            android:textColor="?attr/colorOnSurfaceVariant"
+            android:layout_marginBottom="6dp" />
 
-        <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:text="Paleta de color" android:textSize="12sp" android:textColor="?attr/colorOnSurfaceVariant" />
-        <Spinner android:id="@+id/spinnerPalette" android:layout_width="match_parent"
-            android:layout_height="48dp" android:layout_marginBottom="16dp" />
+        <com.google.android.material.chip.ChipGroup
+            android:id="@+id/chipGroupTheme"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:singleSelection="true"
+            app:selectionRequired="true"
+            android:layout_marginBottom="16dp">
 
-        <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:text="Comportamiento" android:textStyle="bold" android:textSize="13sp"
-            android:textColor="?attr/colorPrimary" android:layout_marginBottom="8dp" />
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chipThemeDark"
+                style="@style/Widget.Material3.Chip.Filter"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Oscuro"
+                android:checked="true" />
 
-        <com.google.android.material.materialswitch.MaterialSwitch
-            android:id="@+id/switchConfirm" android:layout_width="match_parent"
-            android:layout_height="wrap_content" android:text="Confirmar antes de marcar" />
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chipThemeLight"
+                style="@style/Widget.Material3.Chip.Filter"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Claro" />
 
-        <com.google.android.material.materialswitch.MaterialSwitch
-            android:id="@+id/switchCopy" android:layout_width="match_parent"
-            android:layout_height="wrap_content" android:text="Solo copiar (no abrir marcador)" />
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chipThemeSystem"
+                style="@style/Widget.Material3.Chip.Filter"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Sistema" />
+        </com.google.android.material.chip.ChipGroup>
 
-        <com.google.android.material.materialswitch.MaterialSwitch
-            android:id="@+id/switchCall" android:layout_width="match_parent"
-            android:layout_height="wrap_content" android:text="Usar llamada directa (CALL) si hay permiso" />
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Paleta de color"
+            android:textSize="12sp"
+            android:textColor="?attr/colorOnSurfaceVariant"
+            android:layout_marginBottom="6dp" />
 
-        <com.google.android.material.materialswitch.MaterialSwitch
-            android:id="@+id/switchSwipe" android:layout_width="match_parent"
-            android:layout_height="wrap_content" android:text="Desactivar deslizamiento entre pestañas"
+        <HorizontalScrollView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:scrollbars="none"
+            android:layout_marginBottom="4dp">
+
+            <LinearLayout
+                android:id="@+id/paletteRow"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:paddingVertical="4dp" />
+        </HorizontalScrollView>
+
+        <TextView
+            android:id="@+id/tvPaletteName"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="13sp"
+            android:textColor="?attr/colorOnSurface"
             android:layout_marginBottom="16dp" />
 
-        <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:text="Datos" android:textStyle="bold" android:textSize="13sp"
-            android:textColor="?attr/colorPrimary" android:layout_marginBottom="8dp" />
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Comportamiento"
+            android:textStyle="bold"
+            android:textSize="13sp"
+            android:textColor="?attr/colorPrimary"
+            android:layout_marginBottom="8dp" />
+
+        <com.google.android.material.materialswitch.MaterialSwitch
+            android:id="@+id/switchConfirm"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Confirmar antes de marcar" />
+
+        <com.google.android.material.materialswitch.MaterialSwitch
+            android:id="@+id/switchCopy"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Solo copiar (no abrir marcador)" />
+
+        <com.google.android.material.materialswitch.MaterialSwitch
+            android:id="@+id/switchCall"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Usar llamada directa (CALL) si hay permiso" />
+
+        <com.google.android.material.materialswitch.MaterialSwitch
+            android:id="@+id/switchSwipe"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Desactivar deslizamiento entre pestañas"
+            android:layout_marginBottom="16dp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Datos"
+            android:textStyle="bold"
+            android:textSize="13sp"
+            android:textColor="?attr/colorPrimary"
+            android:layout_marginBottom="8dp" />
 
         <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnPin" style="@style/Widget.Material3.Button.TonalButton"
-            android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:text="PIN de transferencia" android:layout_marginBottom="6dp" />
+            android:id="@+id/btnPin"
+            style="@style/Widget.Material3.Button.TonalButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="PIN de transferencia"
+            android:layout_marginBottom="6dp" />
 
         <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnContacts" style="@style/Widget.Material3.Button.TonalButton"
-            android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:text="Contactos frecuentes" android:layout_marginBottom="6dp" />
+            android:id="@+id/btnContacts"
+            style="@style/Widget.Material3.Button.TonalButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Contactos frecuentes"
+            android:layout_marginBottom="6dp" />
 
         <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnTemplates" style="@style/Widget.Material3.Button.TonalButton"
-            android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:text="Plantillas de transferencia" android:layout_marginBottom="6dp" />
+            android:id="@+id/btnTemplates"
+            style="@style/Widget.Material3.Button.TonalButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Plantillas de transferencia"
+            android:layout_marginBottom="6dp" />
 
         <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnExport" style="@style/Widget.Material3.Button.TonalButton"
-            android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:text="Exportar favoritos" android:layout_marginBottom="6dp" />
+            android:id="@+id/btnExport"
+            style="@style/Widget.Material3.Button.TonalButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Exportar favoritos"
+            android:layout_marginBottom="6dp" />
 
         <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnImport" style="@style/Widget.Material3.Button.TonalButton"
-            android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:text="Importar favoritos (pegar JSON)" android:layout_marginBottom="6dp" />
+            android:id="@+id/btnImport"
+            style="@style/Widget.Material3.Button.TonalButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Importar favoritos (pegar JSON)"
+            android:layout_marginBottom="6dp" />
 
         <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnChecklist" style="@style/Widget.Material3.Button.OutlinedButton"
-            android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:text="Checklist post-recarga" android:layout_marginTop="8dp" />
+            android:id="@+id/btnChecklist"
+            style="@style/Widget.Material3.Button.OutlinedButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Checklist post-recarga"
+            android:layout_marginTop="8dp" />
 
     </LinearLayout>
 </androidx.core.widget.NestedScrollView>
