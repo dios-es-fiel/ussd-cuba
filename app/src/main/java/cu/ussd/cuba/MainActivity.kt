@@ -11,13 +11,8 @@ import android.os.Bundle
 import android.text.Editable
 import android.text.InputType
 import android.text.TextWatcher
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
 import android.widget.EditText
-import android.widget.GridLayout
 import android.widget.LinearLayout
-import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
@@ -27,16 +22,9 @@ import androidx.core.content.ContextCompat
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentActivity
-import androidx.fragment.app.activityViewModels
-import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.viewpager2.adapter.FragmentStateAdapter
 import androidx.viewpager2.widget.ViewPager2
-import com.google.android.material.card.MaterialCardView
 import cu.ussd.cuba.databinding.ActivityMainBinding
-import cu.ussd.cuba.databinding.FragmentHomeBinding
-import cu.ussd.cuba.databinding.FragmentListBinding
-import cu.ussd.cuba.databinding.FragmentMasBinding
-import cu.ussd.cuba.databinding.FragmentSettingsBinding
 
 class MainActivity : AppCompatActivity() {
 
@@ -231,7 +219,10 @@ class MainActivity : AppCompatActivity() {
                 }
                 code.paramHints.forEachIndexed { i, hint ->
                     if (hint.contains("Número", true) && values[i].length >= 8) {
-                        prefs.addContact(values[i], values[i])
+                        val num = values[i]
+                        if (prefs.getContacts().none { it.second == num }) {
+                            prefs.addContact(num.takeLast(4), num)
+                        }
                     }
                     if (hint.contains("nueva", true)) prefs.setSavedPin(values[i])
                     else if (hint.contains("Clave", true) && prefs.getSavedPin().isEmpty()) {
