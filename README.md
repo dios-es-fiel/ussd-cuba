@@ -2,10 +2,10 @@
 
 App offline con todos los códigos USSD de ETECSA (saldo, planes, Transfermóvil, emergencias, etc.).
 
-## Novedades v3.1
-- **Selector visual de paletas**: círculos de color (Cuba, Océano, Palma, Orquídea, Atardecer, Caribe)
-- **Chips de tema**: Oscuro / Claro / Sistema (oscuro por defecto)
-- Cada paleta tiene variantes claras y oscuras completas (Material 3)
+## Apariencia
+- **Tema**: Oscuro (por defecto) / Claro / Sistema
+- **Paletas de color**: Cuba (rojo), Océano, Palma, Orquídea, Atardecer, Caribe
+- Cada paleta tiene variantes claras y oscuras (Material 3)
 
 ## Funciones
 - 6 pestañas: Inicio, Consultas, Planes, Llamadas, Más, Ajustes
