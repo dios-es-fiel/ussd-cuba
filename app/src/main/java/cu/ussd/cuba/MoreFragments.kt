@@ -1,6 +1,10 @@
 package cu.ussd.cuba
 
+import android.content.Intent
+import android.net.Uri
+import android.os.Build
 import android.os.Bundle
+import android.provider.Settings
 import android.text.InputType
 import android.view.LayoutInflater
 import android.view.View
@@ -42,8 +46,9 @@ class MasFragment : Fragment() {
         b.chipAtencion.setOnClickListener { sub = "Atención"; sync(); apply() }
         b.chipEmergencias.setOnClickListener { sub = "Emergencias"; sync(); apply() }
         b.chipDispositivo.setOnClickListener { sub = "Dispositivo"; sync(); apply() }
-        vm.query.observe(viewLifecycleOwner) { query = it; apply() }
-        vm.tick.observe(viewLifecycleOwner) { apply() }
+        b.chipWifi.setOnClickListener { sub = "WiFi"; sync(); applyWifi() }
+        vm.query.observe(viewLifecycleOwner) { query = it; if (sub == "WiFi") applyWifi() else apply() }
+        vm.tick.observe(viewLifecycleOwner) { if (sub == "WiFi") applyWifi() else apply() }
         sync(); apply()
     }
 
@@ -52,15 +57,82 @@ class MasFragment : Fragment() {
         b.chipAtencion.isChecked = sub == "Atención"
         b.chipEmergencias.isChecked = sub == "Emergencias"
         b.chipDispositivo.isChecked = sub == "Dispositivo"
+        b.chipWifi.isChecked = sub == "WiFi"
+        b.wifiPanel.isVisible = sub == "WiFi"
+        b.recyclerView.isVisible = sub != "WiFi"
+        b.emptyState.isVisible = false
     }
 
     private fun apply() {
-        if (_b == null) return
+        if (_b == null || sub == "WiFi") return
         val list = CodesRepository.allCodes.filter { it.category == sub }
             .filter { CodesRepository.matchesQuery(it, query) }
         adapter.submitList(list)
         b.emptyState.isVisible = list.isEmpty()
         b.recyclerView.isVisible = list.isNotEmpty()
+    }
+
+    private fun applyWifi() {
+        if (_b == null) return
+        b.recyclerView.isVisible = false
+        b.emptyState.isVisible = false
+        b.wifiPanel.isVisible = true
+        b.tvWifiStatus.text = WifiHelper.statusText(requireContext())
+        b.btnOpenPortal.setOnClickListener { WifiHelper.openPortal(requireContext(), 0) }
+        b.btnOpenPortalAlt.setOnClickListener { WifiHelper.openPortal(requireContext(), 1) }
+        b.btnNautaPortal.setOnClickListener { WifiHelper.openPortal(requireContext(), 2) }
+        b.btnWifiSettings.setOnClickListener { WifiHelper.openWifiSettings(requireContext()) }
+        b.btnStartSession.setOnClickListener {
+            val act = requireActivity() as MainActivity
+            val mins = act.prefs.getSessionDurationMin()
+            val options = arrayOf("15 min", "30 min", "60 min", "90 min", "120 min", "Personalizado")
+            AlertDialog.Builder(requireContext())
+                .setTitle("Iniciar contador de sesión")
+                .setItems(options) { _, which ->
+                    val m = when (which) {
+                        0 -> 15; 1 -> 30; 2 -> 60; 3 -> 90; 4 -> 120
+                        else -> {
+                            // custom handled below
+                            showCustomMinutes(act)
+                            return@setItems
+                        }
+                    }
+                    startFloatTime(act, m)
+                }.setNegativeButton("Cerrar", null).show()
+        }
+    }
+
+    private fun showCustomMinutes(act: MainActivity) {
+        val et = EditText(requireContext()).apply {
+            inputType = InputType.TYPE_CLASS_NUMBER
+            hint = "Minutos"
+            setText(act.prefs.getSessionDurationMin().toString())
+            setPadding(48, 32, 48, 16)
+        }
+        AlertDialog.Builder(requireContext()).setTitle("Duración (minutos)")
+            .setView(et)
+            .setPositiveButton("Iniciar") { _, _ ->
+                val m = et.text.toString().toIntOrNull() ?: 60
+                startFloatTime(act, m)
+            }.setNegativeButton("Cancelar", null).show()
+    }
+
+    private fun startFloatTime(act: MainActivity, minutes: Int) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M &&
+            !Settings.canDrawOverlays(requireContext())
+        ) {
+            Toast.makeText(requireContext(), "Concede permiso de ventanas flotantes en Ajustes", Toast.LENGTH_LONG).show()
+            try {
+                startActivity(Intent(
+                    Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                    Uri.parse("package:${requireContext().packageName}")
+                ))
+            } catch (_: Exception) {}
+            return
+        }
+        act.prefs.setShowFloatingTime(true)
+        OverlayService.setTime(requireContext(), minutes)
+        Toast.makeText(requireContext(), "Contador: $minutes min", Toast.LENGTH_SHORT).show()
     }
 
     override fun onDestroyView() { super.onDestroyView(); _b = null }
@@ -102,6 +174,63 @@ class SettingsFragment : Fragment() {
             p.setDisableSwipe(v)
             act.findViewById<ViewPager2>(R.id.viewPager)?.isUserInputEnabled = !v
         }
+
+        // Notif shortcuts
+        b.switchNotifShortcuts.isChecked = p.getShowNotifShortcuts()
+        b.switchNotifShortcuts.setOnCheckedChangeListener { _, v ->
+            p.setShowNotifShortcuts(v)
+            if (v) QuickAccessHelper.show(requireContext(), p)
+            else QuickAccessHelper.cancel(requireContext())
+        }
+        b.btnNotifCodes.setOnClickListener { pickNotifCodes(act) }
+
+        // Floating time
+        b.switchFloatTime.isChecked = p.getShowFloatingTime()
+        b.switchFloatTime.setOnCheckedChangeListener { _, v ->
+            if (v && !ensureOverlayPerm()) {
+                b.switchFloatTime.isChecked = false
+                return@setOnCheckedChangeListener
+            }
+            p.setShowFloatingTime(v)
+            syncOverlays(act)
+        }
+        b.btnSetSessionTime.setOnClickListener {
+            val et = EditText(requireContext()).apply {
+                inputType = InputType.TYPE_CLASS_NUMBER
+                setText(p.getSessionDurationMin().toString())
+                hint = "Minutos de sesión"
+                setPadding(48, 32, 48, 16)
+            }
+            AlertDialog.Builder(requireContext()).setTitle("Duración sesión WiFi")
+                .setMessage("Cuenta regresiva flotante al conectar a WIFI_ETECSA")
+                .setView(et)
+                .setPositiveButton("Guardar e iniciar") { _, _ ->
+                    val m = et.text.toString().toIntOrNull() ?: 60
+                    p.setSessionDurationMin(m)
+                    if (!ensureOverlayPerm()) return@setPositiveButton
+                    p.setShowFloatingTime(true)
+                    b.switchFloatTime.isChecked = true
+                    OverlayService.setTime(requireContext(), m)
+                    Toast.makeText(requireContext(), "$m min iniciados", Toast.LENGTH_SHORT).show()
+                }.setNegativeButton("Solo guardar") { _, _ ->
+                    val m = et.text.toString().toIntOrNull() ?: 60
+                    p.setSessionDurationMin(m)
+                }.setNeutralButton("Cerrar", null).show()
+        }
+
+        // Speed monitor
+        b.switchSpeed.isChecked = p.getShowSpeedMonitor()
+        b.switchSpeed.setOnCheckedChangeListener { _, v ->
+            if (v && !ensureOverlayPerm()) {
+                b.switchSpeed.isChecked = false
+                return@setOnCheckedChangeListener
+            }
+            p.setShowSpeedMonitor(v)
+            syncOverlays(act)
+        }
+        b.btnSpeedConfig.setOnClickListener { showSpeedConfig(act) }
+
+        b.btnOverlayPerm.setOnClickListener { openOverlaySettings() }
 
         b.spinnerTheme.onItemSelectedListener = object : android.widget.AdapterView.OnItemSelectedListener {
             override fun onNothingSelected(parent: android.widget.AdapterView<*>?) {}
@@ -248,6 +377,131 @@ class SettingsFragment : Fragment() {
                 }
                 .setNegativeButton("Cerrar", null).show()
         }
+    }
+
+    private fun ensureOverlayPerm(): Boolean {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M &&
+            !Settings.canDrawOverlays(requireContext())
+        ) {
+            Toast.makeText(requireContext(), "Activa «Mostrar sobre otras apps»", Toast.LENGTH_LONG).show()
+            openOverlaySettings()
+            return false
+        }
+        return true
+    }
+
+    private fun openOverlaySettings() {
+        try {
+            startActivity(Intent(
+                Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                Uri.parse("package:${requireContext().packageName}")
+            ))
+        } catch (_: Exception) {
+            Toast.makeText(requireContext(), "Abre Ajustes → Apps → USSD Cuba → Ventanas flotantes", Toast.LENGTH_LONG).show()
+        }
+    }
+
+    private fun syncOverlays(act: MainActivity) {
+        val p = act.prefs
+        if (p.getShowFloatingTime() || p.getShowSpeedMonitor()) {
+            OverlayService.start(requireContext())
+            OverlayService.refresh(requireContext())
+        } else {
+            OverlayService.stop(requireContext())
+        }
+    }
+
+    private fun pickNotifCodes(act: MainActivity) {
+        val all = CodesRepository.allCodes.filter { !it.needsParams }
+        val labels = all.map { "${it.title}  ${it.code}" }.toTypedArray()
+        val current = act.prefs.getNotifShortcutIds().toMutableSet()
+        val checked = BooleanArray(all.size) { i -> all[i].id in current }
+        AlertDialog.Builder(requireContext())
+            .setTitle("Códigos en notificación (máx. 4)")
+            .setMultiChoiceItems(labels, checked) { _, which, isChecked ->
+                checked[which] = isChecked
+            }
+            .setPositiveButton("Guardar") { _, _ ->
+                val ids = mutableListOf<String>()
+                checked.forEachIndexed { i, on -> if (on) ids.add(all[i].id) }
+                act.prefs.setNotifShortcutIds(ids.take(4))
+                if (act.prefs.getShowNotifShortcuts()) {
+                    QuickAccessHelper.show(requireContext(), act.prefs)
+                }
+                Toast.makeText(requireContext(), "${ids.take(4).size} códigos", Toast.LENGTH_SHORT).show()
+            }
+            .setNegativeButton("Cancelar", null)
+            .show()
+    }
+
+    private fun showSpeedConfig(act: MainActivity) {
+        val p = act.prefs
+        val items = arrayOf(
+            "Unidad: ${when (p.getSpeedUnit()) { 0 -> "KB/s"; 1 -> "MB/s"; else -> "Auto" }}",
+            "Intervalo: ${p.getSpeedIntervalMs()} ms",
+            "Mostrar subida: ${if (p.getSpeedShowUpload()) "Sí" else "No"}",
+            "Opacidad overlay: ${p.getOverlayOpacity()}",
+            "Tamaño texto: ${p.getOverlayTextSizeSp()} sp",
+            "Restablecer posición overlay"
+        )
+        AlertDialog.Builder(requireContext())
+            .setTitle("Monitor de velocidad")
+            .setItems(items) { _, which ->
+                when (which) {
+                    0 -> {
+                        val units = arrayOf("KB/s", "MB/s", "Auto")
+                        AlertDialog.Builder(requireContext()).setTitle("Unidad")
+                            .setItems(units) { _, u ->
+                                p.setSpeedUnit(u)
+                                OverlayService.refresh(requireContext())
+                            }.show()
+                    }
+                    1 -> {
+                        val opts = arrayOf("500 ms", "1000 ms", "2000 ms", "3000 ms")
+                        AlertDialog.Builder(requireContext()).setTitle("Intervalo de actualización")
+                            .setItems(opts) { _, i ->
+                                p.setSpeedIntervalMs(listOf(500, 1000, 2000, 3000)[i])
+                                OverlayService.refresh(requireContext())
+                            }.show()
+                    }
+                    2 -> {
+                        p.setSpeedShowUpload(!p.getSpeedShowUpload())
+                        OverlayService.refresh(requireContext())
+                        Toast.makeText(requireContext(),
+                            if (p.getSpeedShowUpload()) "Subida visible" else "Solo bajada",
+                            Toast.LENGTH_SHORT).show()
+                    }
+                    3 -> {
+                        val opts = arrayOf("Baja (120)", "Media (180)", "Alta (220)", "Máxima (255)")
+                        AlertDialog.Builder(requireContext()).setTitle("Opacidad")
+                            .setItems(opts) { _, i ->
+                                p.setOverlayOpacity(listOf(120, 180, 220, 255)[i])
+                                OverlayService.refresh(requireContext())
+                            }.show()
+                    }
+                    4 -> {
+                        val opts = arrayOf("10", "12", "14", "16", "18", "20")
+                        AlertDialog.Builder(requireContext()).setTitle("Tamaño texto (sp)")
+                            .setItems(opts) { _, i ->
+                                p.setOverlayTextSizeSp(listOf(10, 12, 14, 16, 18, 20)[i])
+                                // need recreate views
+                                OverlayService.stop(requireContext())
+                                if (p.getShowSpeedMonitor() || p.getShowFloatingTime())
+                                    OverlayService.start(requireContext())
+                            }.show()
+                    }
+                    5 -> {
+                        p.setOverlayX(40)
+                        p.setOverlayY(200)
+                        OverlayService.stop(requireContext())
+                        if (p.getShowSpeedMonitor() || p.getShowFloatingTime())
+                            OverlayService.start(requireContext())
+                        Toast.makeText(requireContext(), "Posición restablecida", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
+            .setNegativeButton("Cerrar", null)
+            .show()
     }
 
     override fun onDestroyView() { super.onDestroyView(); _b = null }
