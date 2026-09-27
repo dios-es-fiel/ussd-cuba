@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut
+        android:shortcutId="saldo"
+        android:enabled="true"
+        android:icon="@mipmap/ic_launcher"
+        android:shortcutShortLabel="@string/shortcut_saldo"
+        android:shortcutLongLabel="@string/shortcut_saldo_long">
+        <intent
+            android:action="cu.ussd.cuba.DIAL"
+            android:targetPackage="cu.ussd.cuba"
+            android:targetClass="cu.ussd.cuba.MainActivity">
+            <extra android:name="ussd_code" android:value="*222#" />
+        </intent>
+    </shortcut>
+    <shortcut
+        android:shortcutId="datos"
+        android:enabled="true"
+        android:icon="@mipmap/ic_launcher"
+        android:shortcutShortLabel="@string/shortcut_datos">
+        <intent
+            android:action="cu.ussd.cuba.DIAL"
+            android:targetPackage="cu.ussd.cuba"
+            android:targetClass="cu.ussd.cuba.MainActivity">
+            <extra android:name="ussd_code" android:value="*222*328#" />
+        </intent>
+    </shortcut>
+</shortcuts>

@@ -1,11 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Default = dark -->
-    <style name="Theme.UssdCuba" parent="Theme.Material3.Dark.NoActionBar">
-        <item name="colorPrimary">#EF5350</item>
-        <item name="colorPrimaryContainer">#5C1A1A</item>
-        <item name="colorOnPrimary">#FFFFFF</item>
-        <item name="colorOnPrimaryContainer">#FFCDD2</item>
+    <style name="Theme.UssdCuba" parent="Theme.UssdCuba.Cuba.Dark" />
+
+    <style name="Theme.UssdCuba.BaseDark" parent="Theme.Material3.Dark.NoActionBar">
         <item name="colorSecondary">#42A5F5</item>
         <item name="colorOnSecondary">#FFFFFF</item>
         <item name="colorSurface">#121212</item>
@@ -17,6 +14,103 @@
         <item name="android:statusBarColor">#121212</item>
         <item name="android:navigationBarColor">#121212</item>
         <item name="android:windowBackground">#121212</item>
-        <item name="android:windowIsTranslucent">false</item>
+    </style>
+
+    <style name="Theme.UssdCuba.BaseLight" parent="Theme.Material3.Light.NoActionBar">
+        <item name="colorSecondary">#1565C0</item>
+        <item name="colorOnSecondary">#FFFFFF</item>
+        <item name="colorSurface">#F5F5F5</item>
+        <item name="colorSurfaceContainer">#FFFFFF</item>
+        <item name="colorOnSurface">#1A1A1A</item>
+        <item name="colorOnSurfaceVariant">#666666</item>
+        <item name="colorOutlineVariant">#E0E0E0</item>
+        <item name="android:colorBackground">#F5F5F5</item>
+        <item name="android:statusBarColor">#B71C1C</item>
+        <item name="android:navigationBarColor">#F5F5F5</item>
+        <item name="android:windowBackground">#F5F5F5</item>
+    </style>
+
+    <style name="Theme.UssdCuba.Cuba.Dark" parent="Theme.UssdCuba.BaseDark">
+        <item name="colorPrimary">#EF5350</item>
+        <item name="colorPrimaryContainer">#5C1A1A</item>
+        <item name="colorOnPrimary">#FFFFFF</item>
+        <item name="colorOnPrimaryContainer">#FFCDD2</item>
+    </style>
+    <style name="Theme.UssdCuba.Cuba.Light" parent="Theme.UssdCuba.BaseLight">
+        <item name="colorPrimary">#C62828</item>
+        <item name="colorPrimaryContainer">#FFCDD2</item>
+        <item name="colorOnPrimary">#FFFFFF</item>
+        <item name="colorOnPrimaryContainer">#B71C1C</item>
+        <item name="android:statusBarColor">#B71C1C</item>
+    </style>
+
+    <style name="Theme.UssdCuba.Azul.Dark" parent="Theme.UssdCuba.BaseDark">
+        <item name="colorPrimary">#42A5F5</item>
+        <item name="colorPrimaryContainer">#0D3B66</item>
+        <item name="colorOnPrimary">#FFFFFF</item>
+        <item name="colorOnPrimaryContainer">#BBDEFB</item>
+    </style>
+    <style name="Theme.UssdCuba.Azul.Light" parent="Theme.UssdCuba.BaseLight">
+        <item name="colorPrimary">#1565C0</item>
+        <item name="colorPrimaryContainer">#BBDEFB</item>
+        <item name="colorOnPrimary">#FFFFFF</item>
+        <item name="colorOnPrimaryContainer">#0D47A1</item>
+        <item name="android:statusBarColor">#0D47A1</item>
+    </style>
+
+    <style name="Theme.UssdCuba.Verde.Dark" parent="Theme.UssdCuba.BaseDark">
+        <item name="colorPrimary">#66BB6A</item>
+        <item name="colorPrimaryContainer">#1B3D1F</item>
+        <item name="colorOnPrimary">#FFFFFF</item>
+        <item name="colorOnPrimaryContainer">#C8E6C9</item>
+    </style>
+    <style name="Theme.UssdCuba.Verde.Light" parent="Theme.UssdCuba.BaseLight">
+        <item name="colorPrimary">#2E7D32</item>
+        <item name="colorPrimaryContainer">#C8E6C9</item>
+        <item name="colorOnPrimary">#FFFFFF</item>
+        <item name="colorOnPrimaryContainer">#1B5E20</item>
+        <item name="android:statusBarColor">#1B5E20</item>
+    </style>
+
+    <style name="Theme.UssdCuba.Morado.Dark" parent="Theme.UssdCuba.BaseDark">
+        <item name="colorPrimary">#AB47BC</item>
+        <item name="colorPrimaryContainer">#3A1A4A</item>
+        <item name="colorOnPrimary">#FFFFFF</item>
+        <item name="colorOnPrimaryContainer">#E1BEE7</item>
+    </style>
+    <style name="Theme.UssdCuba.Morado.Light" parent="Theme.UssdCuba.BaseLight">
+        <item name="colorPrimary">#6A1B9A</item>
+        <item name="colorPrimaryContainer">#E1BEE7</item>
+        <item name="colorOnPrimary">#FFFFFF</item>
+        <item name="colorOnPrimaryContainer">#4A148C</item>
+        <item name="android:statusBarColor">#4A148C</item>
+    </style>
+
+    <style name="Theme.UssdCuba.Naranja.Dark" parent="Theme.UssdCuba.BaseDark">
+        <item name="colorPrimary">#FFA726</item>
+        <item name="colorPrimaryContainer">#4A2C0A</item>
+        <item name="colorOnPrimary">#000000</item>
+        <item name="colorOnPrimaryContainer">#FFE0B2</item>
+    </style>
+    <style name="Theme.UssdCuba.Naranja.Light" parent="Theme.UssdCuba.BaseLight">
+        <item name="colorPrimary">#EF6C00</item>
+        <item name="colorPrimaryContainer">#FFE0B2</item>
+        <item name="colorOnPrimary">#FFFFFF</item>
+        <item name="colorOnPrimaryContainer">#E65100</item>
+        <item name="android:statusBarColor">#E65100</item>
+    </style>
+
+    <style name="Theme.UssdCuba.Turquesa.Dark" parent="Theme.UssdCuba.BaseDark">
+        <item name="colorPrimary">#26C6DA</item>
+        <item name="colorPrimaryContainer">#0A3A40</item>
+        <item name="colorOnPrimary">#000000</item>
+        <item name="colorOnPrimaryContainer">#B2EBF2</item>
+    </style>
+    <style name="Theme.UssdCuba.Turquesa.Light" parent="Theme.UssdCuba.BaseLight">
+        <item name="colorPrimary">#00838F</item>
+        <item name="colorPrimaryContainer">#B2EBF2</item>
+        <item name="colorOnPrimary">#FFFFFF</item>
+        <item name="colorOnPrimaryContainer">#006064</item>
+        <item name="android:statusBarColor">#006064</item>
     </style>
 </resources>

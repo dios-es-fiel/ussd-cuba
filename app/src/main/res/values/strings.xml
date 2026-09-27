@@ -1,4 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Códigos USSD Cuba</string>
+    <string name="widget_desc">Consulta saldo ETECSA (*222#)</string>
+    <string name="shortcut_saldo">Saldo</string>
+    <string name="shortcut_saldo_long">Consultar saldo *222#</string>
+    <string name="shortcut_datos">Datos</string>
 </resources>

@@ -5,7 +5,6 @@
     android:layout_height="match_parent"
     android:fillViewport="true"
     android:background="?attr/colorSurface"
-    android:clipToPadding="false"
     android:paddingBottom="16dp">
 
     <LinearLayout
@@ -14,78 +13,72 @@
         android:orientation="vertical"
         android:paddingHorizontal="16dp">
 
-        <TextView
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnEmergency"
+            style="@style/Widget.Material3.Button.TonalButton"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
-            android:layout_marginBottom="10dp"
-            android:text="Accesos rápidos  · mantén para cambiar"
-            android:textSize="12sp"
-            android:textStyle="bold"
+            android:text="🚨 Emergencias (103–107)" />
+
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:layout_marginTop="12dp" android:layout_marginBottom="8dp"
+            android:text="Accesos rápidos · mantén para cambiar"
+            android:textSize="12sp" android:textStyle="bold"
             android:textColor="?attr/colorOnSurfaceVariant" />
 
-        <GridLayout
-            android:id="@+id/gridShortcuts"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:columnCount="2"
+        <GridLayout android:id="@+id/gridShortcuts" android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:columnCount="2"
             android:alignmentMode="alignBounds" />
 
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="20dp"
-            android:layout_marginBottom="8dp"
-            android:text="Favoritos (máx. 6 en inicio)"
-            android:textSize="12sp"
-            android:textStyle="bold"
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="horizontal" android:layout_marginTop="16dp" android:gravity="center_vertical">
+            <TextView android:layout_width="0dp" android:layout_height="wrap_content"
+                android:layout_weight="1" android:text="Favoritos"
+                android:textSize="12sp" android:textStyle="bold"
+                android:textColor="?attr/colorOnSurfaceVariant" />
+            <TextView android:id="@+id/tvSeeAllFav" android:layout_width="wrap_content"
+                android:layout_height="wrap_content" android:text="Ver todos"
+                android:textSize="12sp" android:textColor="?attr/colorPrimary"
+                android:padding="4dp" />
+        </LinearLayout>
+
+        <TextView android:id="@+id/tvFavEmpty" android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:text="Toca ★ en cualquier código"
+            android:textSize="13sp" android:textColor="?attr/colorOnSurfaceVariant"
+            android:padding="8dp" android:visibility="gone" />
+
+        <androidx.recyclerview.widget.RecyclerView android:id="@+id/rvFavorites"
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:nestedScrollingEnabled="false" android:overScrollMode="never" />
+
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:layout_marginTop="12dp" android:layout_marginBottom="8dp"
+            android:text="Más usados" android:textSize="12sp" android:textStyle="bold"
             android:textColor="?attr/colorOnSurfaceVariant" />
 
-        <TextView
-            android:id="@+id/tvFavEmpty"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Toca ★ en cualquier código"
-            android:textSize="13sp"
-            android:textColor="?attr/colorOnSurfaceVariant"
-            android:padding="8dp"
-            android:visibility="gone" />
+        <androidx.recyclerview.widget.RecyclerView android:id="@+id/rvMostUsed"
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:nestedScrollingEnabled="false" android:overScrollMode="never" />
 
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/rvFavorites"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:nestedScrollingEnabled="false"
-            android:overScrollMode="never" />
+        <TextView android:id="@+id/tvMostEmpty" android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:text="Se llenará al usar códigos"
+            android:textSize="13sp" android:textColor="?attr/colorOnSurfaceVariant"
+            android:padding="8dp" android:visibility="gone" />
 
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:layout_marginBottom="8dp"
-            android:text="Recientes"
-            android:textSize="12sp"
-            android:textStyle="bold"
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:layout_marginTop="12dp" android:layout_marginBottom="8dp"
+            android:text="Recientes" android:textSize="12sp" android:textStyle="bold"
             android:textColor="?attr/colorOnSurfaceVariant" />
 
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/rvRecents"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:nestedScrollingEnabled="false"
-            android:overScrollMode="never" />
+        <androidx.recyclerview.widget.RecyclerView android:id="@+id/rvRecents"
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:nestedScrollingEnabled="false" android:overScrollMode="never" />
 
-        <TextView
-            android:id="@+id/tvRecentsEmpty"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Aún no has marcado códigos"
-            android:textSize="13sp"
-            android:textColor="?attr/colorOnSurfaceVariant"
-            android:gravity="center"
-            android:padding="16dp"
-            android:visibility="gone" />
+        <TextView android:id="@+id/tvRecentsEmpty" android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:text="Aún no has marcado códigos"
+            android:textSize="13sp" android:textColor="?attr/colorOnSurfaceVariant"
+            android:gravity="center" android:padding="16dp" android:visibility="gone" />
 
     </LinearLayout>
-
 </androidx.core.widget.NestedScrollView>
