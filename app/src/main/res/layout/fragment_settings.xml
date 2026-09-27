@@ -17,14 +17,23 @@
             android:textColor="?attr/colorPrimary" android:layout_marginBottom="8dp" />
 
         <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:text="Tema" android:textSize="12sp" android:textColor="?attr/colorOnSurfaceVariant" />
+            android:text="Tema (claro / oscuro)" android:textSize="12sp" android:textColor="?attr/colorOnSurfaceVariant" />
         <Spinner android:id="@+id/spinnerTheme" android:layout_width="match_parent"
             android:layout_height="48dp" android:layout_marginBottom="12dp" />
 
         <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
             android:text="Paleta de color" android:textSize="12sp" android:textColor="?attr/colorOnSurfaceVariant" />
         <Spinner android:id="@+id/spinnerPalette" android:layout_width="match_parent"
-            android:layout_height="48dp" android:layout_marginBottom="16dp" />
+            android:layout_height="48dp" android:layout_marginBottom="12dp" />
+
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:text="Estilo de interfaz" android:textSize="12sp" android:textColor="?attr/colorOnSurfaceVariant" />
+        <Spinner android:id="@+id/spinnerUiStyle" android:layout_width="match_parent"
+            android:layout_height="48dp" android:layout_marginBottom="4dp" />
+        <TextView android:id="@+id/tvUiStyleDesc" android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="11sp" android:textColor="?attr/colorOnSurfaceVariant"
+            android:layout_marginBottom="16dp" />
 
         <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
             android:text="Comportamiento" android:textStyle="bold" android:textSize="13sp"
@@ -66,7 +75,6 @@
             android:text="Elegir códigos de la notificación"
             android:layout_marginBottom="16dp" />
 
-        <!-- Cuenta Nauta + overlays -->
         <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
             android:text="Cuenta Nauta / WiFi" android:textStyle="bold" android:textSize="13sp"
             android:textColor="?attr/colorPrimary" android:layout_marginBottom="8dp" />
