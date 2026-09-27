@@ -1,23 +1,20 @@
-# Códigos USSD Cuba v3.1
+# Códigos USSD Cuba v3.1.1
 
-App offline con todos los códigos USSD de ETECSA (saldo, planes, Transfermóvil, emergencias, etc.).
-
-## Apariencia
-- **Tema**: Oscuro (por defecto) / Claro / Sistema
-- **Paletas de color**: Cuba (rojo), Océano, Palma, Orquídea, Atardecer, Caribe
-- Cada paleta tiene variantes claras y oscuras (Material 3)
+## Novedades v3.1.1
+- Fix GridLayout accesos rápidos (`rowSpec`)
+- Bottom nav con colores sólidos (sin `?attr` en selector)
+- Contactos: nombre = últimos 4 dígitos (no el número completo)
+- Confirmación antes de eliminar plantillas
+- Imports limpios
 
 ## Funciones
-- 6 pestañas: Inicio, Consultas, Planes, Llamadas, Más, Ajustes
-- Búsqueda con sinónimos (megas, saldo, banco…)
-- Favoritos, recientes, más usados
-- Diálogo de parámetros (PIN, contactos, plantillas)
-- Widget de saldo `*222#` y atajos de launcher
-- Export/import de favoritos (JSON)
-- Checklist post-recarga
-- Swipe entre pestañas desactivable (sin rastro al cambiar)
+- **Paletas**: Cuba, Océano, Palma, Orquídea, Atardecer, Caribe (+ claro/oscuro/sistema)
+- **Ajustes** en pestaña propia
+- **Widget** saldo *222# y **atajos** de launcher
+- Refresh con **ViewModel**
+- Swipe desactivable — sin rastro al cambiar pestaña
+- Más usados, favoritos, emergencias, plantillas, export/import JSON
+- Checklist post-recarga, PIN, contactos, modo CALL opcional
 
 ## Descargar APK
-1. Ve a [Actions](https://github.com/luiseilerys/ussd-cuba/actions)
-2. Abre el último workflow **Build APK** (verde ✓)
-3. Descarga el artifact **ussd-cuba-apk**
+https://github.com/luiseilerys/ussd-cuba/actions → artifact **ussd-cuba-apk**
