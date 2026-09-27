@@ -1,5 +1,6 @@
 package cu.ussd.cuba
 
+import android.os.Bundle
 import android.text.InputType
 import android.view.LayoutInflater
 import android.view.View
@@ -144,8 +145,10 @@ class SettingsFragment : Fragment() {
                 .setItems(labels.toTypedArray()) { _, which ->
                     if (contacts.isEmpty()) return@setItems
                     AlertDialog.Builder(requireContext()).setTitle(contacts[which].first)
+                        .setMessage(contacts[which].second)
                         .setPositiveButton("Eliminar") { _, _ ->
                             p.saveContacts(contacts.filterIndexed { i, _ -> i != which })
+                            Toast.makeText(requireContext(), "Eliminado", Toast.LENGTH_SHORT).show()
                         }.setNegativeButton("Cerrar", null).show()
                 }
                 .setPositiveButton("Añadir") { _, _ ->
@@ -160,7 +163,10 @@ class SettingsFragment : Fragment() {
                     AlertDialog.Builder(requireContext()).setTitle("Nuevo").setView(box)
                         .setPositiveButton("Guardar") { _, _ ->
                             if (num.text.length >= 6)
-                                p.addContact(n.text.toString().ifBlank { num.text.toString() }, num.text.toString())
+                                p.addContact(
+                                    n.text.toString().ifBlank { num.text.toString().takeLast(4) },
+                                    num.text.toString()
+                                )
                         }.setNegativeButton("Cancelar", null).show()
                 }.setNegativeButton("Cerrar", null).show()
         }
@@ -171,8 +177,16 @@ class SettingsFragment : Fragment() {
             AlertDialog.Builder(requireContext()).setTitle("Plantillas transferencia")
                 .setItems(labels.toTypedArray()) { _, which ->
                     if (t.isEmpty()) return@setItems
-                    p.saveTemplates(t.filterIndexed { i, _ -> i != which })
-                    Toast.makeText(requireContext(), "Eliminada", Toast.LENGTH_SHORT).show()
+                    val item = t[which]
+                    AlertDialog.Builder(requireContext())
+                        .setTitle("¿Eliminar plantilla?")
+                        .setMessage("${item.first}\n${item.second} · ${item.third} CUP")
+                        .setPositiveButton("Eliminar") { _, _ ->
+                            p.saveTemplates(t.filterIndexed { i, _ -> i != which })
+                            Toast.makeText(requireContext(), "Eliminada", Toast.LENGTH_SHORT).show()
+                        }
+                        .setNegativeButton("Cancelar", null)
+                        .show()
                 }
                 .setPositiveButton("Añadir") { _, _ ->
                     val box = LinearLayout(requireContext()).apply {
@@ -190,8 +204,11 @@ class SettingsFragment : Fragment() {
                         .setPositiveButton("Guardar") { _, _ ->
                             if (num.text.length >= 6) {
                                 val list = t.toMutableList()
-                                list.add(0, Triple(n.text.toString().ifBlank { "Sin nombre" },
-                                    num.text.toString(), amt.text.toString()))
+                                list.add(0, Triple(
+                                    n.text.toString().ifBlank { "Sin nombre" },
+                                    num.text.toString(),
+                                    amt.text.toString()
+                                ))
                                 p.saveTemplates(list)
                             }
                         }.setNegativeButton("Cancelar", null).show()
