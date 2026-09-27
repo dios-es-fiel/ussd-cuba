@@ -1,27 +1,19 @@
 package cu.ussd.cuba
 
 import android.os.Bundle
-import android.text.InputType
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.ArrayAdapter
-import android.widget.EditText
 import android.widget.GridLayout
-import android.widget.LinearLayout
 import android.widget.TextView
-import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.viewpager2.widget.ViewPager2
 import com.google.android.material.card.MaterialCardView
 import cu.ussd.cuba.databinding.FragmentHomeBinding
 import cu.ussd.cuba.databinding.FragmentListBinding
-import cu.ussd.cuba.databinding.FragmentMasBinding
-import cu.ussd.cuba.databinding.FragmentSettingsBinding
 
 class HomeFragment : Fragment() {
     private var _b: FragmentHomeBinding? = null
@@ -73,8 +65,10 @@ class HomeFragment : Fragment() {
         codes.forEachIndexed { i, code ->
             val item = layoutInflater.inflate(R.layout.item_shortcut, grid, false) as MaterialCardView
             item.layoutParams = GridLayout.LayoutParams().apply {
-                width = 0; height = ViewGroup.LayoutParams.WRAP_CONTENT
+                width = 0
+                height = ViewGroup.LayoutParams.WRAP_CONTENT
                 columnSpec = GridLayout.spec(i % 2, 1f)
+                rowSpec = GridLayout.spec(i / 2)
                 setMargins(6, 6, 6, 6)
             }
             item.findViewById<TextView>(R.id.tvIcon).text = icons.getOrElse(i) { "☆" }
