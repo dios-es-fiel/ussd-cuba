@@ -1,16 +1,22 @@
 package cu.ussd.cuba
 
-import android.Manifest
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
+import android.text.InputType
 import android.view.Menu
+import android.view.MenuItem
+import android.view.View
+import android.widget.EditText
+import android.widget.LinearLayout
 import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.app.AppCompatDelegate
 import androidx.appcompat.widget.SearchView
-import androidx.core.app.ActivityCompat
-import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.material.chip.Chip
 import cu.ussd.cuba.databinding.ActivityMainBinding
@@ -19,120 +25,59 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
     private lateinit var adapter: UssdAdapter
-    private val CALL_PERMISSION_REQUEST = 100
-    private var pendingCode: String? = null
-    private var currentCategory: String = "Todos"
-    private var currentQuery: String = ""
+    private lateinit var prefs: PrefsHelper
 
-    private val allCodes = listOf(
-        // === CONSULTAS ===
-        UssdCode("Saldo principal y recursos", "*222#", "Saldo, VOZ, SMS, DATOS y vigencia de la línea", "Consultas"),
-        UssdCode("Plan de DATOS", "*222*328#", "Datos restantes y vigencia del plan", "Consultas"),
-        UssdCode("Bonos y planes en USD", "*222*266#", "Bonos promocionales, datos.cu y planes en dólares", "Consultas"),
-        UssdCode("Plan de VOZ", "*222*869#", "Minutos de voz disponibles y vigencia", "Consultas"),
-        UssdCode("Plan de SMS", "*222*767#", "SMS restantes y vigencia", "Consultas"),
-        UssdCode("Estado recargas nacionales", "*222*732#", "Cuánto puedes recargar aún (límite 360 CUP/30 días)", "Consultas"),
-        UssdCode("Plan Amigos", "*222*264#", "Consulta el estado del Plan Amigos", "Consultas"),
-        UssdCode("Validar internet móvil", "*222*468#", "Verifica si tu línea está habilitada para datos móviles", "Consultas"),
-        UssdCode("Saldo postpago / corporativo", "*111#", "Para líneas postpago e institucionales (petroleros)", "Consultas"),
-        UssdCode("Tarifa diferenciada", "*111*6#", "Recibe SMS si tienes tarifa diferenciada", "Consultas"),
-
-        // === PLANES Y COMPRAS ===
-        UssdCode("Comprar / activar planes", "*133#", "Menú: Datos, SMS, Voz, Plan Amigos y combinados", "Planes"),
-        UssdCode("Transferir saldo / Adelanta", "*234#", "1-Transferencia  2-Cambiar clave  3-Adelanta Saldo", "Planes"),
-        UssdCode("Transferencia directa", "*234*1*número*clave*monto#", "Transferir saldo de forma directa (clave por defecto 1234)", "Planes"),
-        UssdCode("Cambiar clave transferencia", "*234*2*clave_actual*clave_nueva#", "Cambia el PIN de transferencia de saldo", "Planes"),
-
-        // === RECARGAS ===
-        UssdCode("Recargar con tarjeta (voz)", "*666", "Sigue las instrucciones de voz", "Recargas"),
-        UssdCode("Recargar rápido", "*662*CODIGO#", "Reemplaza CODIGO por el de tu tarjeta de recarga", "Recargas"),
-
-        // === LLAMADAS ===
-        UssdCode("Cobro revertido (*99)", "*99", "El receptor paga la llamada. Luego marca el número", "Llamadas"),
-        UssdCode("Llamada anónima", "#31#", "Oculta tu número. Luego marca el destino", "Llamadas"),
-        UssdCode("Mostrar número", "*31#", "Vuelve a mostrar tu número en llamadas salientes", "Llamadas"),
-        UssdCode("Activar desvío de llamadas", "*21*número#", "Desvía todas las llamadas al número indicado", "Llamadas"),
-        UssdCode("Desactivar desvío", "#21#", "Cancela el desvío de llamadas", "Llamadas"),
-        UssdCode("Activar llamada en espera", "*43#", "Permite recibir llamadas mientras hablas", "Llamadas"),
-        UssdCode("Desactivar llamada en espera", "#43#", "Desactiva la llamada en espera", "Llamadas"),
-        UssdCode("Buzón de voz", "*123", "Accede a tu buzón de voz", "Llamadas"),
-        UssdCode("Buzón de voz (alternativo)", "*80", "Otra forma de acceder al buzón de voz", "Llamadas"),
-
-        // === INTERNACIONAL ===
-        UssdCode("Desactivar llamadas internacionales", "*331*clave#", "Clave inicial 0000. Protege tu saldo", "Internacional"),
-        UssdCode("Activar llamadas internacionales", "#331*clave#", "Habilita el acceso internacional", "Internacional"),
-        UssdCode("Cambiar clave internacional", "**03*330*clave_actual*clave_nueva*clave_nueva#", "Cambia la clave de acceso internacional", "Internacional"),
-
-        // === DISPOSITIVO ===
-        UssdCode("Consultar IMEI", "*#06#", "Muestra el número IMEI de tu teléfono", "Dispositivo"),
-
-        // === ATENCIÓN Y EMERGENCIAS ===
-        UssdCode("Atención móvil ETECSA", "52642266", "Asistencia a usuarios de telefonía móvil (24h)", "Atención"),
-        UssdCode("Atención TFA", "52642244", "Asistencia Telefonía Fija Alternativa", "Atención"),
-        UssdCode("Gestión comercial", "112", "Trámites y solicitudes residenciales", "Atención"),
-        UssdCode("Información de abonados", "113", "Consulta de números telefónicos", "Atención"),
-        UssdCode("Reparaciones fija", "114", "Reportar averías de telefonía fija", "Atención"),
-        UssdCode("Atención telefónica", "2266", "Atención al cliente ETECSA", "Atención"),
-        UssdCode("Emergencia - Antidrogas", "103", "Gratuito", "Emergencias"),
-        UssdCode("Emergencia - Ambulancias", "104", "Gratuito", "Emergencias"),
-        UssdCode("Emergencia - Bomberos", "105", "Gratuito", "Emergencias"),
-        UssdCode("Emergencia - Policía", "106", "Gratuito", "Emergencias"),
-        UssdCode("Emergencia - Salvamento marítimo", "107", "Gratuito", "Emergencias"),
-
-        // === TRANSFERMÓVIL / BANCOS (USSD) ===
-        UssdCode("TM - Autenticarse BANDEC", "*444*40*02#", "Iniciar sesión Transfermóvil BANDEC", "Transfermóvil"),
-        UssdCode("TM - Autenticarse BANMET", "*444*40*03#", "Iniciar sesión Transfermóvil Banco Metropolitano", "Transfermóvil"),
-        UssdCode("TM - Desconectar sesión", "*444*70#", "Cerrar sesión Transfermóvil", "Transfermóvil"),
-        UssdCode("TM - Consultar saldo", "*444*46#", "Consulta de saldo bancario", "Transfermóvil"),
-        UssdCode("TM - Últimas operaciones", "*444*48#", "Últimos movimientos de la cuenta", "Transfermóvil"),
-        UssdCode("TM - Transferencia", "*444*45#", "Realizar transferencia bancaria", "Transfermóvil"),
-        UssdCode("TM - Pagar electricidad", "*444*41#", "Pago de factura eléctrica", "Transfermóvil"),
-        UssdCode("TM - Pagar teléfono", "*444*42#", "Pago de factura telefónica", "Transfermóvil"),
-        UssdCode("TM - Pagar ONAT", "*444*43#", "Pago de impuestos ONAT", "Transfermóvil"),
-        UssdCode("TM - Recarga saldo móvil", "*444*54#", "Recargar saldo Cubacel desde banco", "Transfermóvil"),
-        UssdCode("TM - Recarga Nauta", "*444*59#", "Recargar cuenta Nauta", "Transfermóvil"),
-        UssdCode("TM - Consulta de límites", "*444*62#", "Ver límites de operaciones", "Transfermóvil"),
-        UssdCode("TM - Cambiar PIN", "*444*69#", "Cambiar el PIN de Transfermóvil", "Transfermóvil"),
-        UssdCode("TM - Lista de servicios", "*444*71#", "Ver todos los servicios disponibles", "Transfermóvil")
-    )
-
-    private val categories = listOf(
-        "Todos", "Consultas", "Planes", "Recargas", "Llamadas",
-        "Internacional", "Dispositivo", "Atención", "Emergencias", "Transfermóvil"
-    )
+    private var currentCategory = "Todos"
+    private var currentQuery = ""
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        prefs = PrefsHelper(this)
         setSupportActionBar(binding.toolbar)
 
-        adapter = UssdAdapter(allCodes) { code ->
-            dialUssd(code.code)
-        }
+        adapter = UssdAdapter(
+            onClick = { code -> handleCodeClick(code) },
+            onLongClick = { code -> copyCode(code) },
+            onFavoriteClick = { code -> toggleFavorite(code) },
+            isFavorite = { id -> prefs.isFavorite(id) }
+        )
         binding.recyclerView.layoutManager = LinearLayoutManager(this)
         binding.recyclerView.adapter = adapter
-        binding.tvCount.text = "${allCodes.size} códigos"
 
+        setupShortcuts()
         setupChips()
+        applyFilter()
+    }
+
+    private fun setupShortcuts() {
+        val labels = listOf("Saldo", "Datos", "Planes", "Transferir")
+        val buttons = listOf(
+            binding.btnShortcut1,
+            binding.btnShortcut2,
+            binding.btnShortcut3,
+            binding.btnShortcut4
+        )
+        CodesRepository.shortcuts.forEachIndexed { i, code ->
+            buttons[i].text = labels[i]
+            buttons[i].setOnClickListener { handleCodeClick(code) }
+        }
     }
 
     private fun setupChips() {
         binding.chipGroup.removeAllViews()
-        categories.forEach { cat ->
+        CodesRepository.categories.forEach { cat ->
             val chip = Chip(this).apply {
                 text = cat
                 isCheckable = true
                 isChecked = cat == "Todos"
-                setOnClickListener {
-                    currentCategory = cat
-                    // Uncheck others
-                    for (i in 0 until binding.chipGroup.childCount) {
-                        val c = binding.chipGroup.getChildAt(i) as Chip
-                        c.isChecked = c.text == cat
+                setOnCheckedChangeListener { _, isChecked ->
+                    if (isChecked) {
+                        currentCategory = cat
+                        applyFilter()
                     }
-                    applyFilter()
                 }
             }
             binding.chipGroup.addView(chip)
@@ -140,25 +85,136 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun applyFilter() {
-        val q = currentQuery.trim().lowercase()
-        val filtered = allCodes.filter { code ->
-            val matchCategory = currentCategory == "Todos" || code.category == currentCategory
-            val matchQuery = q.isEmpty() ||
-                    code.title.lowercase().contains(q) ||
-                    code.code.lowercase().contains(q) ||
-                    code.description.lowercase().contains(q) ||
-                    code.category.lowercase().contains(q)
-            matchCategory && matchQuery
+        val favs = prefs.getFavorites()
+        val recents = prefs.getRecents()
+
+        var list = when (currentCategory) {
+            "Favoritos" -> CodesRepository.allCodes.filter { favs.contains(it.id) }
+            "Recientes" -> recents.mapNotNull { id -> CodesRepository.allCodes.find { it.id == id } }
+            "Todos" -> CodesRepository.allCodes
+            else -> CodesRepository.allCodes.filter { it.category == currentCategory }
         }
-        adapter.updateList(filtered)
-        binding.tvCount.text = "${filtered.size} códigos"
+
+        list = list.filter { CodesRepository.matchesQuery(it, currentQuery) }
+
+        adapter.submitList(list)
+        binding.tvCount.text = "${list.size} códigos"
+
+        if (list.isEmpty()) {
+            binding.emptyState.visibility = View.VISIBLE
+            binding.recyclerView.visibility = View.GONE
+            binding.tvEmptyMessage.text = when {
+                currentCategory == "Favoritos" -> "Aún no tienes favoritos.\nToca la estrella en cualquier código."
+                currentCategory == "Recientes" -> "Aún no has marcado ningún código."
+                currentQuery.isNotEmpty() -> "Sin resultados para \"$currentQuery\""
+                else -> "No hay códigos en esta categoría."
+            }
+        } else {
+            binding.emptyState.visibility = View.GONE
+            binding.recyclerView.visibility = View.VISIBLE
+        }
+    }
+
+    private fun handleCodeClick(code: UssdCode) {
+        if (code.needsParams) {
+            showParamsDialog(code)
+        } else if (prefs.getConfirmBeforeDial()) {
+            AlertDialog.Builder(this)
+                .setTitle(code.title)
+                .setMessage("¿Marcar ${code.code}?")
+                .setPositiveButton("Marcar") { _, _ -> dial(code, code.code) }
+                .setNegativeButton("Cancelar", null)
+                .setNeutralButton("Copiar") { _, _ -> copyCode(code) }
+                .show()
+        } else {
+            dial(code, code.code)
+        }
+    }
+
+    private fun showParamsDialog(code: UssdCode) {
+        val container = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(48, 24, 48, 8)
+        }
+        val edits = mutableListOf<EditText>()
+        code.paramHints.forEach { hint ->
+            val et = EditText(this).apply {
+                this.hint = hint
+                inputType = when {
+                    hint.contains("Monto", true) || hint.contains("clave", true) ||
+                            hint.contains("Código", true) || hint.contains("Número", true) ->
+                        InputType.TYPE_CLASS_NUMBER
+                    else -> InputType.TYPE_CLASS_TEXT
+                }
+            }
+            container.addView(et)
+            edits.add(et)
+        }
+
+        AlertDialog.Builder(this)
+            .setTitle(code.title)
+            .setMessage(code.description)
+            .setView(container)
+            .setPositiveButton("Marcar") { _, _ ->
+                val values = edits.map { it.text.toString().trim() }
+                if (values.any { it.isEmpty() }) {
+                    Toast.makeText(this, "Completa todos los campos", Toast.LENGTH_SHORT).show()
+                    return@setPositiveButton
+                }
+                var finalCode = code.code
+                // Replace placeholders in order: {numero}, {clave}, {monto}, {codigo}, etc.
+                val placeholders = Regex("\\{[^}]+\\}").findAll(code.code).map { it.value }.toList()
+                placeholders.forEachIndexed { i, ph ->
+                    if (i < values.size) {
+                        finalCode = finalCode.replace(ph, values[i])
+                    }
+                }
+                dial(code, finalCode)
+            }
+            .setNegativeButton("Cancelar", null)
+            .show()
+    }
+
+    private fun dial(code: UssdCode, finalCode: String) {
+        prefs.addRecent(code.id)
+        val clean = finalCode.replace(" ", "")
+        try {
+            // ACTION_DIAL is more reliable for USSD on modern Android
+            val intent = Intent(Intent.ACTION_DIAL).apply {
+                data = Uri.parse("tel:${Uri.encode(clean)}")
+            }
+            startActivity(intent)
+            Toast.makeText(this, "Abriendo marcador: $clean", Toast.LENGTH_SHORT).show()
+        } catch (e: Exception) {
+            Toast.makeText(this, "No se pudo abrir el marcador", Toast.LENGTH_SHORT).show()
+        }
+        // Refresh if viewing recents
+        if (currentCategory == "Recientes") applyFilter()
+    }
+
+    private fun copyCode(code: UssdCode) {
+        val display = code.code.replace(Regex("\\{[^}]+\\}"), "…")
+        val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+        clipboard.setPrimaryClip(ClipData.newPlainText("USSD", code.code))
+        Toast.makeText(this, "Copiado: $display", Toast.LENGTH_SHORT).show()
+    }
+
+    private fun toggleFavorite(code: UssdCode) {
+        val added = prefs.toggleFavorite(code.id)
+        Toast.makeText(
+            this,
+            if (added) "Añadido a favoritos" else "Quitado de favoritos",
+            Toast.LENGTH_SHORT
+        ).show()
+        adapter.notifyDataSetChanged()
+        if (currentCategory == "Favoritos") applyFilter()
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
         menuInflater.inflate(R.menu.main_menu, menu)
         val searchItem = menu.findItem(R.id.action_search)
         val searchView = searchItem.actionView as SearchView
-        searchView.queryHint = "Buscar código, saldo, recarga..."
+        searchView.queryHint = "Buscar: saldo, megas, recarga..."
         searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
             override fun onQueryTextSubmit(query: String?): Boolean {
                 currentQuery = query ?: ""
@@ -172,77 +228,35 @@ class MainActivity : AppCompatActivity() {
                 return true
             }
         })
+
+        // Sync confirm switch state
+        val confirmItem = menu.findItem(R.id.action_confirm)
+        confirmItem.isChecked = prefs.getConfirmBeforeDial()
         return true
     }
 
-    private fun dialUssd(code: String) {
-        val needsManual = code.contains("número", ignoreCase = true) ||
-                code.contains("CODIGO") ||
-                code.contains("clave") ||
-                code.contains("monto")
-
-        val cleanCode = code.replace(" ", "").trim()
-
-        if (needsManual) {
-            Toast.makeText(this, "Completa el número/clave/monto en el marcador", Toast.LENGTH_LONG).show()
-            val intent = Intent(Intent.ACTION_DIAL).apply {
-                data = Uri.parse("tel:${Uri.encode(cleanCode)}")
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        return when (item.itemId) {
+            R.id.action_confirm -> {
+                item.isChecked = !item.isChecked
+                prefs.setConfirmBeforeDial(item.isChecked)
+                Toast.makeText(
+                    this,
+                    if (item.isChecked) "Confirmación activada" else "Confirmación desactivada",
+                    Toast.LENGTH_SHORT
+                ).show()
+                true
             }
-            startActivity(intent)
-            return
-        }
-
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CALL_PHONE)
-            != PackageManager.PERMISSION_GRANTED
-        ) {
-            pendingCode = cleanCode
-            ActivityCompat.requestPermissions(
-                this,
-                arrayOf(Manifest.permission.CALL_PHONE),
-                CALL_PERMISSION_REQUEST
-            )
-            return
-        }
-
-        try {
-            val intent = Intent(Intent.ACTION_CALL).apply {
-                data = Uri.parse("tel:${Uri.encode(cleanCode)}")
-            }
-            startActivity(intent)
-        } catch (e: Exception) {
-            val dialIntent = Intent(Intent.ACTION_DIAL).apply {
-                data = Uri.parse("tel:${Uri.encode(cleanCode)}")
-            }
-            startActivity(dialIntent)
-        }
-    }
-
-    override fun onRequestPermissionsResult(
-        requestCode: Int,
-        permissions: Array<out String>,
-        grantResults: IntArray
-    ) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (requestCode == CALL_PERMISSION_REQUEST) {
-            if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                pendingCode?.let { dialUssd(it) }
-            } else {
-                Toast.makeText(this, "Se abrirá el marcador", Toast.LENGTH_SHORT).show()
-                pendingCode?.let {
-                    val intent = Intent(Intent.ACTION_DIAL).apply {
-                        data = Uri.parse("tel:${Uri.encode(it)}")
-                    }
-                    startActivity(intent)
+            R.id.action_theme -> {
+                val night = AppCompatDelegate.getDefaultNightMode()
+                if (night == AppCompatDelegate.MODE_NIGHT_YES) {
+                    AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
+                } else {
+                    AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
                 }
+                true
             }
-            pendingCode = null
+            else -> super.onOptionsItemSelected(item)
         }
     }
 }
-
-data class UssdCode(
-    val title: String,
-    val code: String,
-    val description: String,
-    val category: String
-)

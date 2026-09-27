@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.UssdCuba" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="colorPrimary">#EF5350</item>
+        <item name="colorPrimaryContainer">#5C1A1A</item>
+        <item name="colorOnPrimary">#FFFFFF</item>
+        <item name="colorSecondary">#42A5F5</item>
+        <item name="colorOnSecondary">#FFFFFF</item>
+        <item name="android:statusBarColor">#1A1A1A</item>
+        <item name="android:navigationBarColor">#121212</item>
+    </style>
+</resources>

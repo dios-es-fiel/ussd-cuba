@@ -1,14 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <style name="Theme.UssdCuba" parent="Theme.Material3.Light.NoActionBar">
+    <style name="Theme.UssdCuba" parent="Theme.Material3.DayNight.NoActionBar">
         <item name="colorPrimary">#C62828</item>
         <item name="colorPrimaryContainer">#FFCDD2</item>
         <item name="colorOnPrimary">#FFFFFF</item>
         <item name="colorSecondary">#1565C0</item>
         <item name="colorOnSecondary">#FFFFFF</item>
-        <item name="colorSurface">#FAFAFA</item>
         <item name="android:statusBarColor">#B71C1C</item>
-        <item name="android:navigationBarColor">#FAFAFA</item>
-        <item name="chipStyle">@style/Widget.Material3.Chip.Filter</item>
     </style>
 </resources>

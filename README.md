@@ -1,13 +1,20 @@
-# Códigos USSD Cuba (ETECSA) v1.1
+# Códigos USSD Cuba v2.0
 
-App Android con **50+ códigos USSD** de ETECSA, Transfermóvil y emergencias.
+App Android completa con códigos USSD de ETECSA, Transfermóvil y emergencias.
 
-## Novedades v1.1
-- Más códigos (inspirados en UtilEs / QvaCall)
-- **Búsqueda** en tiempo real
-- **Categorías** con chips: Consultas, Planes, Recargas, Llamadas, Internacional, Transfermóvil, Emergencias...
-- Diseño mejorado (cards, badges de categoría)
-- Códigos de Transfermóvil por USSD (para teléfonos sin app)
+## Novedades v2.0
+
+- **Diálogo de parámetros**: transferencias, desvíos, recargas y anónimas piden los datos antes de marcar
+- **Favoritos** (estrella) y **Recientes**
+- **Atajos rápidos**: Saldo, Datos, Planes, Transferir
+- **Copiar código** con pulsación larga
+- **Búsqueda con sinónimos** (megas, internet, bono…)
+- **Confirmación opcional** antes de marcar (menú)
+- **Tema claro / oscuro**
+- **Estado vacío** cuando no hay resultados
+- **DiffUtil** para actualizaciones suaves de la lista
+- Sin permiso CALL_PHONE (usa ACTION_DIAL, más compatible)
+- Más códigos (BPA, gas, cuentas, saldo fija…)
 
 ## Descargar APK
 
@@ -16,26 +23,10 @@ App Android con **50+ códigos USSD** de ETECSA, Transfermóvil y emergencias.
 2. Descarga el artifact **ussd-cuba-apk**
 3. Descomprime e instala el `.apk`
 
-## Códigos principales
+## Uso
 
-| Código | Uso |
-|--------|-----|
-| `*222#` | Saldo + recursos |
-| `*222*328#` | Datos |
-| `*222*266#` | Bonos / USD |
-| `*222*869#` | Voz |
-| `*222*767#` | SMS |
-| `*222*732#` | Límite recargas nacionales |
-| `*133#` | Comprar planes |
-| `*234#` | Transferir / Adelanta saldo |
-| `*666` | Recargar tarjeta |
-| `*99` | Cobro revertido |
-| `*#06#` | IMEI |
-| `*444*46#` | Saldo Transfermóvil |
-
-## Compilar
-
-```bash
-gradle wrapper --gradle-version 8.2
-./gradlew assembleDebug
-```
+- Toca un código para marcarlo
+- Toca la **estrella** para favorito
+- **Mantén pulsado** para copiar
+- Usa los chips para filtrar por categoría
+- Menú → Confirmar antes de marcar / Cambiar tema
