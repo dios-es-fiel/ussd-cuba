@@ -7,7 +7,9 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
+import android.provider.Settings
 import android.text.Editable
 import android.text.InputType
 import android.text.TextWatcher
@@ -35,7 +37,6 @@ class MainActivity : AppCompatActivity() {
     private val viewModel: AppViewModel by viewModels()
     private var updatingNav = false
 
-    // 0-4 bottom nav; 5 = Ajustes (solo desde menú toolbar)
     private val pageTitles = listOf("Inicio", "Consultas", "Planes", "Llamadas", "Más", "Ajustes")
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -51,7 +52,6 @@ class MainActivity : AppCompatActivity() {
         binding.viewPager.setPageTransformer(null)
         binding.viewPager.isUserInputEnabled = !prefs.getDisableSwipe()
 
-        // lastTab 0..4 for bottom nav; if was 5 (settings) stay valid
         val start = prefs.getLastTab().coerceIn(0, 5)
         binding.viewPager.setCurrentItem(start, false)
         binding.toolbar.title = pageTitles[start]
@@ -114,6 +114,17 @@ class MainActivity : AppCompatActivity() {
         }
 
         handleDialIntent(intent)
+        restoreBackgroundFeatures()
+    }
+
+    private fun restoreBackgroundFeatures() {
+        if (prefs.getShowNotifShortcuts()) {
+            QuickAccessHelper.show(this, prefs)
+        }
+        val canOverlay = Build.VERSION.SDK_INT < Build.VERSION_CODES.M || Settings.canDrawOverlays(this)
+        if (canOverlay && (prefs.getShowFloatingTime() || prefs.getShowSpeedMonitor())) {
+            OverlayService.start(this)
+        }
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
