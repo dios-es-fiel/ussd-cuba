@@ -1,29 +1,31 @@
 package cu.ussd.cuba
 
+import android.Manifest
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
 import android.text.Editable
 import android.text.InputType
 import android.text.TextWatcher
 import android.view.LayoutInflater
-import android.view.Menu
-import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ArrayAdapter
 import android.widget.EditText
 import android.widget.GridLayout
 import android.widget.LinearLayout
+import android.widget.Spinner
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
-import androidx.appcompat.app.AppCompatDelegate
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentActivity
@@ -32,11 +34,12 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.viewpager2.adapter.FragmentStateAdapter
 import androidx.viewpager2.widget.ViewPager2
 import com.google.android.material.card.MaterialCardView
-import com.google.android.material.tabs.TabLayoutMediator
+import com.google.android.material.materialswitch.MaterialSwitch
 import cu.ussd.cuba.databinding.ActivityMainBinding
 import cu.ussd.cuba.databinding.FragmentHomeBinding
 import cu.ussd.cuba.databinding.FragmentListBinding
 import cu.ussd.cuba.databinding.FragmentMasBinding
+import cu.ussd.cuba.databinding.FragmentSettingsBinding
 
 class MainActivity : AppCompatActivity() {
 
@@ -45,34 +48,25 @@ class MainActivity : AppCompatActivity() {
     private val viewModel: AppViewModel by viewModels()
     private var updatingNav = false
 
-    private val pageTitles = listOf("Inicio", "Consultas", "Planes", "Llamadas", "Más")
+    private val pageTitles = listOf("Inicio", "Consultas", "Planes", "Llamadas", "Más", "Ajustes")
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        applyThemeFromPrefs()
+        prefs = PrefsHelper(this)
+        ThemeHelper.applyNightMode(prefs)
+        ThemeHelper.applyToActivity(this, prefs)
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
-
-        prefs = PrefsHelper(this)
         setSupportActionBar(binding.toolbar)
-
-        // Solid background prevents page transition "ghost trails"
-        binding.root.setBackgroundColor(
-            resources.getColor(android.R.color.transparent, theme).let {
-                // force opaque surface
-                val typed = theme.obtainStyledAttributes(intArrayOf(android.R.attr.colorBackground))
-                val bg = typed.getColor(0, 0xFF121212.toInt())
-                typed.recycle()
-                binding.root.setBackgroundColor(bg)
-                bg
-            }
-        )
 
         binding.viewPager.adapter = PagerAdapter(this)
         binding.viewPager.offscreenPageLimit = 1
-        binding.viewPager.isUserInputEnabled = true
-        // Disable fancy transforms that leave trails on some devices
         binding.viewPager.setPageTransformer(null)
+        binding.viewPager.isUserInputEnabled = !prefs.getDisableSwipe()
+
+        val start = prefs.getLastTab().coerceIn(0, 5)
+        binding.viewPager.setCurrentItem(start, false)
+        binding.toolbar.title = pageTitles[start]
 
         binding.bottomNav.setOnItemSelectedListener { item ->
             if (updatingNav) return@setOnItemSelectedListener true
@@ -82,25 +76,35 @@ class MainActivity : AppCompatActivity() {
                 R.id.nav_planes -> 2
                 R.id.nav_llamadas -> 3
                 R.id.nav_mas -> 4
+                R.id.nav_settings -> 5
                 else -> 0
             }
             if (binding.viewPager.currentItem != index) {
-                // false = no smooth scroll → avoids permanent trail artifacts
                 binding.viewPager.setCurrentItem(index, false)
             }
             binding.toolbar.title = pageTitles[index]
+            prefs.setLastTab(index)
+            binding.searchCard.isVisible = index != 5
             true
         }
+
+        // Sync bottom nav with start tab
+        val ids = listOf(
+            R.id.nav_home, R.id.nav_consultas, R.id.nav_planes,
+            R.id.nav_llamadas, R.id.nav_mas, R.id.nav_settings
+        )
+        updatingNav = true
+        binding.bottomNav.selectedItemId = ids[start]
+        updatingNav = false
+        binding.searchCard.isVisible = start != 5
 
         binding.viewPager.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
             override fun onPageSelected(position: Int) {
                 updatingNav = true
-                val ids = listOf(
-                    R.id.nav_home, R.id.nav_consultas, R.id.nav_planes,
-                    R.id.nav_llamadas, R.id.nav_mas
-                )
                 binding.bottomNav.selectedItemId = ids[position]
                 binding.toolbar.title = pageTitles[position]
+                prefs.setLastTab(position)
+                binding.searchCard.isVisible = position != 5
                 updatingNav = false
             }
         })
@@ -114,43 +118,46 @@ class MainActivity : AppCompatActivity() {
                 viewModel.setQuery(q)
             }
         })
-
         binding.btnClearSearch.setOnClickListener {
             binding.etSearch.setText("")
             viewModel.setQuery("")
         }
+
+        handleDialIntent(intent)
     }
 
-    private fun applyThemeFromPrefs() {
-        val mode = PrefsHelper(this).getThemeMode()
-        when (mode) {
-            "light" -> AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
-            "system" -> AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM)
-            else -> AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
-        }
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        handleDialIntent(intent)
+    }
+
+    private fun handleDialIntent(intent: Intent?) {
+        val code = intent?.getStringExtra("ussd_code") ?: return
+        dialRaw(code)
     }
 
     fun handleCodeClick(code: UssdCode) {
         if (prefs.getCopyInsteadOfDial()) {
-            copyCode(code)
+            if (code.needsParams) showParamsDialog(code, copyOnly = true)
+            else copyRaw(code.code)
             return
         }
         if (code.needsParams) {
-            showParamsDialog(code)
+            showParamsDialog(code, copyOnly = false)
         } else if (prefs.getConfirmBeforeDial()) {
             AlertDialog.Builder(this)
                 .setTitle(code.title)
                 .setMessage("¿Marcar ${code.code}?")
                 .setPositiveButton("Marcar") { _, _ -> dial(code, code.code) }
                 .setNegativeButton("Cancelar", null)
-                .setNeutralButton("Copiar") { _, _ -> copyCode(code) }
+                .setNeutralButton("Copiar") { _, _ -> copyRaw(code.code) }
                 .show()
         } else {
             dial(code, code.code)
         }
     }
 
-    private fun showParamsDialog(code: UssdCode) {
+    private fun showParamsDialog(code: UssdCode, copyOnly: Boolean) {
         val container = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(48, 24, 48, 8)
@@ -158,6 +165,24 @@ class MainActivity : AppCompatActivity() {
         val edits = mutableListOf<EditText>()
         val contacts = prefs.getContacts()
         val savedPin = prefs.getSavedPin()
+        val templates = prefs.getTemplates()
+
+        if (code.id == "p3" && templates.isNotEmpty()) {
+            val row = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
+            templates.take(4).forEach { (name, number, amount) ->
+                val chip = com.google.android.material.chip.Chip(this).apply {
+                    text = name
+                    setOnClickListener {
+                        // fill later after edits created — store on tags
+                    }
+                }
+                chip.tag = Triple(name, number, amount)
+                row.addView(chip)
+            }
+            container.addView(row)
+            // Will wire after edits exist
+            container.tag = row
+        }
 
         code.paramHints.forEach { hint ->
             val et = EditText(this).apply {
@@ -167,34 +192,35 @@ class MainActivity : AppCompatActivity() {
                         InputType.TYPE_CLASS_NUMBER or InputType.TYPE_NUMBER_VARIATION_PASSWORD
                     else -> InputType.TYPE_CLASS_NUMBER
                 }
-                // Prefill PIN
                 if (hint.contains("Clave", true) && savedPin.isNotEmpty() &&
-                    !hint.contains("nueva", true) && !hint.contains("actual", true)
-                ) {
-                    setText(savedPin)
-                }
-                if (hint.contains("actual", true) && savedPin.isNotEmpty()) {
-                    setText(savedPin)
-                }
+                    !hint.contains("nueva", true)
+                ) setText(savedPin)
             }
             container.addView(et)
             edits.add(et)
-
-            // Contact chips for number fields
             if (hint.contains("Número", true) && contacts.isNotEmpty()) {
-                val contactRow = LinearLayout(this).apply {
-                    orientation = LinearLayout.HORIZONTAL
-                    setPadding(0, 4, 0, 8)
-                }
+                val contactRow = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
                 contacts.take(4).forEach { (name, number) ->
-                    val chip = com.google.android.material.chip.Chip(this).apply {
+                    contactRow.addView(com.google.android.material.chip.Chip(this).apply {
                         text = name.ifBlank { number.takeLast(4) }
-                        isClickable = true
                         setOnClickListener { et.setText(number) }
-                    }
-                    contactRow.addView(chip)
+                    })
                 }
                 container.addView(contactRow)
+            }
+        }
+
+        // Wire templates
+        (container.tag as? LinearLayout)?.let { row ->
+            for (i in 0 until row.childCount) {
+                val chip = row.getChildAt(i) as com.google.android.material.chip.Chip
+                @Suppress("UNCHECKED_CAST")
+                val t = chip.tag as Triple<String, String, String>
+                chip.setOnClickListener {
+                    if (edits.isNotEmpty()) edits[0].setText(t.second)
+                    if (edits.size > 2 && t.third.isNotEmpty()) edits[2].setText(t.third)
+                    if (edits.size > 1 && savedPin.isNotEmpty()) edits[1].setText(savedPin)
+                }
             }
         }
 
@@ -202,65 +228,73 @@ class MainActivity : AppCompatActivity() {
             .setTitle(code.title)
             .setMessage(code.description)
             .setView(container)
-            .setPositiveButton("Marcar") { _, _ ->
+            .setPositiveButton(if (copyOnly) "Copiar" else "Marcar") { _, _ ->
                 val values = edits.map { it.text.toString().trim() }
                 if (values.any { it.isEmpty() }) {
                     Toast.makeText(this, "Completa todos los campos", Toast.LENGTH_SHORT).show()
                     return@setPositiveButton
                 }
-                // Save number as contact if looks like phone
                 code.paramHints.forEachIndexed { i, hint ->
                     if (hint.contains("Número", true) && values[i].length >= 8) {
-                        prefs.addContact(values[i].takeLast(4), values[i])
+                        prefs.addContact(values[i], values[i])
                     }
-                    if (hint.contains("Clave", true) && !hint.contains("nueva", true) &&
-                        values[i].isNotEmpty()
-                    ) {
-                        // optional: don't auto-overwrite; only if empty saved
-                        if (prefs.getSavedPin().isEmpty()) prefs.setSavedPin(values[i])
-                    }
-                    if (hint.contains("nueva", true) && values[i].isNotEmpty()) {
+                    if (hint.contains("nueva", true)) prefs.setSavedPin(values[i])
+                    else if (hint.contains("Clave", true) && prefs.getSavedPin().isEmpty()) {
                         prefs.setSavedPin(values[i])
                     }
                 }
                 var finalCode = code.code
-                val placeholders = Regex("\\{[^}]+\\}").findAll(code.code).map { it.value }.toList()
-                placeholders.forEachIndexed { i, ph ->
-                    if (i < values.size) finalCode = finalCode.replace(ph, values[i])
-                }
-                dial(code, finalCode)
+                Regex("\\{[^}]+\\}").findAll(code.code).map { it.value }.toList()
+                    .forEachIndexed { i, ph ->
+                        if (i < values.size) finalCode = finalCode.replace(ph, values[i])
+                    }
+                if (copyOnly) copyRaw(finalCode) else dial(code, finalCode)
             }
             .setNegativeButton("Cancelar", null)
-            .setNeutralButton("Copiar plantilla") { _, _ ->
-                copyRaw(code.code)
-            }
             .show()
     }
 
     fun dial(code: UssdCode, finalCode: String) {
         prefs.addRecent(code.id)
+        viewModel.notifyDataChanged()
+        dialRaw(finalCode)
+    }
+
+    private fun dialRaw(finalCode: String) {
         val clean = finalCode.replace(" ", "")
         try {
-            startActivity(Intent(Intent.ACTION_DIAL).apply {
-                data = Uri.parse("tel:${Uri.encode(clean)}")
-            })
+            if (prefs.getUseCallAction() &&
+                ContextCompat.checkSelfPermission(this, Manifest.permission.CALL_PHONE)
+                == PackageManager.PERMISSION_GRANTED
+            ) {
+                startActivity(Intent(Intent.ACTION_CALL).apply {
+                    data = Uri.parse("tel:${Uri.encode(clean)}")
+                })
+            } else {
+                if (prefs.getUseCallAction() &&
+                    ContextCompat.checkSelfPermission(this, Manifest.permission.CALL_PHONE)
+                    != PackageManager.PERMISSION_GRANTED
+                ) {
+                    ActivityCompat.requestPermissions(
+                        this, arrayOf(Manifest.permission.CALL_PHONE), 200
+                    )
+                }
+                startActivity(Intent(Intent.ACTION_DIAL).apply {
+                    data = Uri.parse("tel:${Uri.encode(clean)}")
+                })
+            }
             Toast.makeText(this, clean, Toast.LENGTH_SHORT).show()
         } catch (e: Exception) {
             Toast.makeText(this, "No se pudo abrir el marcador", Toast.LENGTH_SHORT).show()
         }
-        notifyDataChanged()
     }
 
     fun copyCode(code: UssdCode) {
-        if (code.needsParams) {
-            showParamsDialog(code)
-            Toast.makeText(this, "Completa los datos; luego puedes copiar", Toast.LENGTH_SHORT).show()
-            return
-        }
-        copyRaw(code.code)
+        if (code.needsParams) showParamsDialog(code, copyOnly = true)
+        else copyRaw(code.code)
     }
 
-    private fun copyRaw(text: String) {
+    fun copyRaw(text: String) {
         val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
         clipboard.setPrimaryClip(ClipData.newPlainText("USSD", text))
         Toast.makeText(this, "Copiado: $text", Toast.LENGTH_SHORT).show()
@@ -269,398 +303,438 @@ class MainActivity : AppCompatActivity() {
     fun toggleFavorite(code: UssdCode) {
         val added = prefs.toggleFavorite(code.id)
         Toast.makeText(this, if (added) "Favorito ★" else "Quitado", Toast.LENGTH_SHORT).show()
-        notifyDataChanged()
+        viewModel.notifyDataChanged()
     }
 
-    private fun notifyDataChanged() {
-        supportFragmentManager.fragments.forEach { frag ->
-            when (frag) {
-                is HomeFragment -> frag.refresh()
-                is ListFragment -> frag.reload()
-                is MasFragment -> frag.reload()
-            }
-        }
-    }
-
-    override fun onCreateOptionsMenu(menu: Menu): Boolean {
-        menuInflater.inflate(R.menu.main_menu, menu)
-        menu.findItem(R.id.action_confirm).isChecked = prefs.getConfirmBeforeDial()
-        menu.findItem(R.id.action_copy_mode).isChecked = prefs.getCopyInsteadOfDial()
-        return true
-    }
-
-    override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        return when (item.itemId) {
-            R.id.action_confirm -> {
-                item.isChecked = !item.isChecked
-                prefs.setConfirmBeforeDial(item.isChecked)
-                true
-            }
-            R.id.action_copy_mode -> {
-                item.isChecked = !item.isChecked
-                prefs.setCopyInsteadOfDial(item.isChecked)
-                Toast.makeText(
-                    this,
-                    if (item.isChecked) "Modo copiar activado" else "Modo marcar activado",
-                    Toast.LENGTH_SHORT
-                ).show()
-                true
-            }
-            R.id.action_pin -> {
-                showPinDialog()
-                true
-            }
-            R.id.action_contacts -> {
-                showContactsDialog()
-                true
-            }
-            R.id.action_theme_dark -> {
-                prefs.setThemeMode("dark")
-                AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
-                true
-            }
-            R.id.action_theme_light -> {
-                prefs.setThemeMode("light")
-                AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
-                true
-            }
-            R.id.action_theme_system -> {
-                prefs.setThemeMode("system")
-                AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM)
-                true
-            }
-            else -> super.onOptionsItemSelected(item)
-        }
-    }
-
-    private fun showPinDialog() {
-        val et = EditText(this).apply {
-            inputType = InputType.TYPE_CLASS_NUMBER or InputType.TYPE_NUMBER_VARIATION_PASSWORD
-            hint = "PIN transferencia (ej. 1234)"
-            setText(prefs.getSavedPin())
-            setPadding(48, 32, 48, 16)
-        }
+    fun showEmergencyPanel() {
+        val emerg = CodesRepository.allCodes.filter { it.category == "Emergencias" }
+        val labels = emerg.map { "${it.title}  ${it.code}" }.toTypedArray()
         AlertDialog.Builder(this)
-            .setTitle("PIN de transferencia")
-            .setMessage("Se usará para rellenar automáticamente. Se guarda solo en este teléfono.")
-            .setView(et)
-            .setPositiveButton("Guardar") { _, _ ->
-                prefs.setSavedPin(et.text.toString().trim())
-                Toast.makeText(this, "PIN guardado", Toast.LENGTH_SHORT).show()
-            }
-            .setNegativeButton("Borrar") { _, _ ->
-                prefs.setSavedPin("")
-                Toast.makeText(this, "PIN borrado", Toast.LENGTH_SHORT).show()
-            }
-            .setNeutralButton("Cancelar", null)
+            .setTitle("Emergencias")
+            .setItems(labels) { _, which -> handleCodeClick(emerg[which]) }
+            .setNegativeButton("Cerrar", null)
             .show()
     }
 
-    private fun showContactsDialog() {
-        val contacts = prefs.getContacts()
-        val labels = contacts.map { "${it.first} — ${it.second}" }.ifEmpty { listOf("(vacío)") }
+    fun showAllFavorites() {
+        val favs = prefs.getFavorites()
+        val list = CodesRepository.allCodes.filter { it.id in favs }
+        if (list.isEmpty()) {
+            Toast.makeText(this, "No hay favoritos", Toast.LENGTH_SHORT).show()
+            return
+        }
         AlertDialog.Builder(this)
-            .setTitle("Contactos frecuentes")
-            .setItems(labels.toTypedArray()) { _, which ->
-                if (contacts.isEmpty()) return@setItems
-                val (name, number) = contacts[which]
-                AlertDialog.Builder(this)
-                    .setTitle(name)
-                    .setMessage(number)
-                    .setPositiveButton("Eliminar") { _, _ ->
-                        prefs.saveContacts(contacts.filterIndexed { i, _ -> i != which })
-                        Toast.makeText(this, "Eliminado", Toast.LENGTH_SHORT).show()
-                    }
-                    .setNegativeButton("Cerrar", null)
-                    .show()
-            }
-            .setPositiveButton("Añadir") { _, _ ->
-                val box = LinearLayout(this).apply {
-                    orientation = LinearLayout.VERTICAL
-                    setPadding(48, 24, 48, 8)
-                }
-                val nameEt = EditText(this).apply { hint = "Nombre" }
-                val numEt = EditText(this).apply {
-                    hint = "Número"
-                    inputType = InputType.TYPE_CLASS_PHONE
-                }
-                box.addView(nameEt)
-                box.addView(numEt)
-                AlertDialog.Builder(this)
-                    .setTitle("Nuevo contacto")
-                    .setView(box)
-                    .setPositiveButton("Guardar") { _, _ ->
-                        val n = nameEt.text.toString().trim()
-                        val num = numEt.text.toString().trim()
-                        if (num.length >= 6) {
-                            prefs.addContact(n.ifBlank { num.takeLast(4) }, num)
-                            Toast.makeText(this, "Guardado", Toast.LENGTH_SHORT).show()
-                        }
-                    }
-                    .setNegativeButton("Cancelar", null)
-                    .show()
+            .setTitle("Todos los favoritos (${list.size})")
+            .setItems(list.map { "${it.title}\n${it.code}" }.toTypedArray()) { _, w ->
+                handleCodeClick(list[w])
             }
             .setNegativeButton("Cerrar", null)
             .show()
     }
 
+    fun recreateWithTheme() {
+        recreate()
+    }
+
     private inner class PagerAdapter(fa: FragmentActivity) : FragmentStateAdapter(fa) {
-        override fun getItemCount() = 5
+        override fun getItemCount() = 6
         override fun createFragment(position: Int): Fragment = when (position) {
             0 -> HomeFragment()
             1 -> ListFragment.newInstance("Consultas")
             2 -> ListFragment.newInstance("Planes")
             3 -> ListFragment.newInstance("Llamadas")
-            else -> MasFragment()
+            4 -> MasFragment()
+            else -> SettingsFragment()
         }
     }
 }
 
-// ---------- HOME ----------
+// ===== HOME =====
 class HomeFragment : Fragment() {
-
-    private var _binding: FragmentHomeBinding? = null
-    private val binding get() = _binding!!
+    private var _b: FragmentHomeBinding? = null
+    private val b get() = _b!!
     private lateinit var favAdapter: UssdAdapter
     private lateinit var recentAdapter: UssdAdapter
-    private val viewModel: AppViewModel by activityViewModels()
+    private lateinit var mostAdapter: UssdAdapter
+    private val vm: AppViewModel by activityViewModels()
     private var query = ""
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
-        _binding = FragmentHomeBinding.inflate(inflater, container, false)
-        binding.root.setBackgroundColor(0x00000000) // parent provides opaque bg
-        return binding.root
+    override fun onCreateView(i: LayoutInflater, c: ViewGroup?, s: Bundle?): View {
+        _b = FragmentHomeBinding.inflate(i, c, false)
+        return b.root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        val activity = requireActivity() as MainActivity
-        favAdapter = makeAdapter(activity)
-        recentAdapter = makeAdapter(activity)
-        binding.rvFavorites.layoutManager = LinearLayoutManager(requireContext())
-        binding.rvFavorites.adapter = favAdapter
-        binding.rvRecents.layoutManager = LinearLayoutManager(requireContext())
-        binding.rvRecents.adapter = recentAdapter
-        binding.rvFavorites.itemAnimator = null
-        binding.rvRecents.itemAnimator = null
-
+        val act = requireActivity() as MainActivity
+        favAdapter = ad(act); recentAdapter = ad(act); mostAdapter = ad(act)
+        b.rvFavorites.layoutManager = LinearLayoutManager(ctx())
+        b.rvRecents.layoutManager = LinearLayoutManager(ctx())
+        b.rvMostUsed.layoutManager = LinearLayoutManager(ctx())
+        b.rvFavorites.adapter = favAdapter
+        b.rvRecents.adapter = recentAdapter
+        b.rvMostUsed.adapter = mostAdapter
+        b.rvFavorites.itemAnimator = null
+        b.rvRecents.itemAnimator = null
+        b.rvMostUsed.itemAnimator = null
+        b.btnEmergency.setOnClickListener { act.showEmergencyPanel() }
+        b.tvSeeAllFav.setOnClickListener { act.showAllFavorites() }
         setupShortcuts()
-        viewModel.query.observe(viewLifecycleOwner) {
-            query = it
-            refresh()
-        }
+        vm.query.observe(viewLifecycleOwner) { query = it; refresh() }
+        vm.tick.observe(viewLifecycleOwner) { refresh() }
         refresh()
     }
 
-    private fun makeAdapter(activity: MainActivity) = UssdAdapter(
-        onClick = { activity.handleCodeClick(it) },
-        onLongClick = { activity.copyCode(it) },
-        onFavoriteClick = { activity.toggleFavorite(it) },
-        isFavorite = { activity.prefs.isFavorite(it) }
+    private fun ctx() = requireContext()
+    private fun ad(act: MainActivity) = UssdAdapter(
+        { act.handleCodeClick(it) }, { act.copyCode(it) },
+        { act.toggleFavorite(it) }, { act.prefs.isFavorite(it) }
     )
 
     private fun setupShortcuts() {
-        val activity = requireActivity() as MainActivity
-        val grid = binding.gridShortcuts
+        val act = requireActivity() as MainActivity
+        val grid = b.gridShortcuts
         grid.removeAllViews()
         val icons = listOf("💰", "📡", "📦", "🔄")
-        val ids = activity.prefs.getShortcutIds()
-        val codes = ids.mapNotNull { id -> CodesRepository.allCodes.find { it.id == id } }
+        val codes = act.prefs.getShortcutIds()
+            .mapNotNull { id -> CodesRepository.allCodes.find { it.id == id } }
             .ifEmpty { CodesRepository.shortcuts }
         codes.forEachIndexed { i, code ->
             val item = layoutInflater.inflate(R.layout.item_shortcut, grid, false) as MaterialCardView
             item.layoutParams = GridLayout.LayoutParams().apply {
-                width = 0
-                height = ViewGroup.LayoutParams.WRAP_CONTENT
+                width = 0; height = ViewGroup.LayoutParams.WRAP_CONTENT
                 columnSpec = GridLayout.spec(i % 2, 1f)
                 setMargins(6, 6, 6, 6)
             }
             item.findViewById<TextView>(R.id.tvIcon).text = icons.getOrElse(i) { "☆" }
-            item.findViewById<TextView>(R.id.tvLabel).text = code.title.take(12)
+            item.findViewById<TextView>(R.id.tvLabel).text = when (code.id) {
+                "c1" -> "Saldo"; "c2" -> "Datos"; "p1" -> "Planes"; "p2" -> "Transferir"
+                else -> code.title.take(14)
+            }
             item.findViewById<TextView>(R.id.tvCodeHint).text = code.code
-            item.setOnClickListener { activity.handleCodeClick(code) }
+            item.setOnClickListener { act.handleCodeClick(code) }
             item.setOnLongClickListener {
-                pickShortcut(i)
+                val opts = CodesRepository.allCodes.map { "${it.title} (${it.code})" }.toTypedArray()
+                AlertDialog.Builder(ctx()).setTitle("Elegir acceso").setItems(opts) { _, w ->
+                    val ids = act.prefs.getShortcutIds().toMutableList()
+                    while (ids.size < 4) ids.add("c1")
+                    ids[i] = CodesRepository.allCodes[w].id
+                    act.prefs.setShortcutIds(ids)
+                    setupShortcuts()
+                }.show()
                 true
             }
             grid.addView(item)
         }
     }
 
-    private fun pickShortcut(slot: Int) {
-        val activity = requireActivity() as MainActivity
-        val options = CodesRepository.allCodes.map { "${it.title} (${it.code})" }.toTypedArray()
-        AlertDialog.Builder(requireContext())
-            .setTitle("Elegir acceso rápido")
-            .setItems(options) { _, which ->
-                val ids = activity.prefs.getShortcutIds().toMutableList()
-                while (ids.size < 4) ids.add("c1")
-                ids[slot] = CodesRepository.allCodes[which].id
-                activity.prefs.setShortcutIds(ids)
-                setupShortcuts()
-                Toast.makeText(requireContext(), "Acceso actualizado", Toast.LENGTH_SHORT).show()
-            }
-            .show()
-    }
-
     fun refresh() {
-        if (_binding == null) return
-        val activity = requireActivity() as MainActivity
-        val favs = activity.prefs.getFavorites()
-        var favList = CodesRepository.allCodes.filter { favs.contains(it.id) }
+        if (_b == null) return
+        val act = requireActivity() as MainActivity
+        val favs = act.prefs.getFavorites()
+        var favList = CodesRepository.allCodes.filter { it.id in favs }
         if (query.isNotEmpty()) favList = favList.filter { CodesRepository.matchesQuery(it, query) }
         favAdapter.submitList(favList.take(6))
-        binding.tvFavEmpty.isVisible = favList.isEmpty()
+        b.tvFavEmpty.isVisible = favList.isEmpty()
+        b.tvSeeAllFav.isVisible = favList.size > 6 || favs.size > 6
 
-        var recents = activity.prefs.getRecents()
+        var most = act.prefs.getMostUsed(6)
             .mapNotNull { id -> CodesRepository.allCodes.find { it.id == id } }
-            .take(5)
-        if (query.isNotEmpty()) recents = recents.filter { CodesRepository.matchesQuery(it, query) }
-        recentAdapter.submitList(recents)
-        binding.tvRecentsEmpty.isVisible = recents.isEmpty()
-        binding.rvRecents.isVisible = recents.isNotEmpty()
+        if (query.isNotEmpty()) most = most.filter { CodesRepository.matchesQuery(it, query) }
+        mostAdapter.submitList(most)
+        b.tvMostEmpty.isVisible = most.isEmpty()
+
+        var rec = act.prefs.getRecents()
+            .mapNotNull { id -> CodesRepository.allCodes.find { it.id == id } }.take(5)
+        if (query.isNotEmpty()) rec = rec.filter { CodesRepository.matchesQuery(it, query) }
+        recentAdapter.submitList(rec)
+        b.tvRecentsEmpty.isVisible = rec.isEmpty()
+        b.rvRecents.isVisible = rec.isNotEmpty()
     }
 
-    override fun onDestroyView() {
-        super.onDestroyView()
-        _binding = null
-    }
+    override fun onDestroyView() { super.onDestroyView(); _b = null }
 }
 
-// ---------- LIST ----------
+// ===== LIST =====
 class ListFragment : Fragment() {
-
-    private var _binding: FragmentListBinding? = null
-    private val binding get() = _binding!!
+    private var _b: FragmentListBinding? = null
+    private val b get() = _b!!
     private lateinit var adapter: UssdAdapter
-    private var category: String = "Consultas"
-    private val viewModel: AppViewModel by activityViewModels()
+    private var category = "Consultas"
+    private val vm: AppViewModel by activityViewModels()
     private var query = ""
 
     companion object {
-        fun newInstance(category: String) = ListFragment().apply {
-            arguments = Bundle().apply { putString("category", category) }
+        fun newInstance(cat: String) = ListFragment().apply {
+            arguments = Bundle().apply { putString("category", cat) }
         }
     }
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
+    override fun onCreate(s: Bundle?) {
+        super.onCreate(s)
         category = arguments?.getString("category") ?: "Consultas"
     }
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
-        _binding = FragmentListBinding.inflate(inflater, container, false)
-        return binding.root
+    override fun onCreateView(i: LayoutInflater, c: ViewGroup?, s: Bundle?): View {
+        _b = FragmentListBinding.inflate(i, c, false); return b.root
     }
 
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        val activity = requireActivity() as MainActivity
+    override fun onViewCreated(view: View, s: Bundle?) {
+        val act = requireActivity() as MainActivity
         adapter = UssdAdapter(
-            onClick = { activity.handleCodeClick(it) },
-            onLongClick = { activity.copyCode(it) },
-            onFavoriteClick = { activity.toggleFavorite(it) },
-            isFavorite = { activity.prefs.isFavorite(it) }
+            { act.handleCodeClick(it) }, { act.copyCode(it) },
+            { act.toggleFavorite(it) }, { act.prefs.isFavorite(it) }
         )
-        binding.recyclerView.layoutManager = LinearLayoutManager(requireContext())
-        binding.recyclerView.adapter = adapter
-        binding.recyclerView.itemAnimator = null // prevents ghost trails
-        viewModel.query.observe(viewLifecycleOwner) {
-            query = it
-            applyFilter()
-        }
-        applyFilter()
+        b.recyclerView.layoutManager = LinearLayoutManager(requireContext())
+        b.recyclerView.adapter = adapter
+        b.recyclerView.itemAnimator = null
+        vm.query.observe(viewLifecycleOwner) { query = it; apply() }
+        vm.tick.observe(viewLifecycleOwner) { apply() }
+        apply()
     }
 
-    private fun baseList(): List<UssdCode> = when (category) {
+    private fun base() = when (category) {
         "Consultas" -> CodesRepository.allCodes.filter { it.category == "Consultas" }
-        "Planes" -> CodesRepository.allCodes.filter {
-            it.category == "Planes" || it.category == "Recargas"
-        }
-        "Llamadas" -> CodesRepository.allCodes.filter {
-            it.category == "Llamadas" || it.category == "Internacional"
-        }
+        "Planes" -> CodesRepository.allCodes.filter { it.category in listOf("Planes", "Recargas") }
+        "Llamadas" -> CodesRepository.allCodes.filter { it.category in listOf("Llamadas", "Internacional") }
         else -> CodesRepository.allCodes
     }
 
-    private fun applyFilter() {
-        if (_binding == null) return
-        val list = baseList().filter { CodesRepository.matchesQuery(it, query) }
+    private fun apply() {
+        if (_b == null) return
+        val list = base().filter { CodesRepository.matchesQuery(it, query) }
         adapter.submitList(list)
-        binding.emptyState.isVisible = list.isEmpty()
-        binding.recyclerView.isVisible = list.isNotEmpty()
-        binding.tvEmpty.text = if (query.isNotEmpty())
-            "Sin resultados para \"$query\"" else "Sin códigos"
+        b.emptyState.isVisible = list.isEmpty()
+        b.recyclerView.isVisible = list.isNotEmpty()
+        b.tvEmpty.text = if (query.isNotEmpty()) "Sin resultados" else "Sin códigos"
     }
 
-    fun reload() = applyFilter()
-
-    override fun onDestroyView() {
-        super.onDestroyView()
-        _binding = null
-    }
+    override fun onDestroyView() { super.onDestroyView(); _b = null }
 }
 
-// ---------- MÁS (TM / Atención / Emergencias) ----------
+// ===== MAS =====
 class MasFragment : Fragment() {
-
-    private var _binding: FragmentMasBinding? = null
-    private val binding get() = _binding!!
+    private var _b: FragmentMasBinding? = null
+    private val b get() = _b!!
     private lateinit var adapter: UssdAdapter
-    private val viewModel: AppViewModel by activityViewModels()
-    private var query = ""
-    private var sub = "Transfermóvil"
+    private val vm: AppViewModel by activityViewModels()
+    private var query = ""; private var sub = "Transfermóvil"
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
-        _binding = FragmentMasBinding.inflate(inflater, container, false)
-        return binding.root
+    override fun onCreateView(i: LayoutInflater, c: ViewGroup?, s: Bundle?): View {
+        _b = FragmentMasBinding.inflate(i, c, false); return b.root
     }
 
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        val activity = requireActivity() as MainActivity
+    override fun onViewCreated(view: View, s: Bundle?) {
+        val act = requireActivity() as MainActivity
         adapter = UssdAdapter(
-            onClick = { activity.handleCodeClick(it) },
-            onLongClick = { activity.copyCode(it) },
-            onFavoriteClick = { activity.toggleFavorite(it) },
-            isFavorite = { activity.prefs.isFavorite(it) }
+            { act.handleCodeClick(it) }, { act.copyCode(it) },
+            { act.toggleFavorite(it) }, { act.prefs.isFavorite(it) }
         )
-        binding.recyclerView.layoutManager = LinearLayoutManager(requireContext())
-        binding.recyclerView.adapter = adapter
-        binding.recyclerView.itemAnimator = null
-
-        binding.chipTm.setOnClickListener { selectSub("Transfermóvil") }
-        binding.chipAtencion.setOnClickListener { selectSub("Atención") }
-        binding.chipEmergencias.setOnClickListener { selectSub("Emergencias") }
-        binding.chipDispositivo.setOnClickListener { selectSub("Dispositivo") }
-
-        viewModel.query.observe(viewLifecycleOwner) {
-            query = it
-            applyFilter()
-        }
-        selectSub("Transfermóvil")
+        b.recyclerView.layoutManager = LinearLayoutManager(requireContext())
+        b.recyclerView.adapter = adapter
+        b.recyclerView.itemAnimator = null
+        b.chipTm.setOnClickListener { sub = "Transfermóvil"; sync(); apply() }
+        b.chipAtencion.setOnClickListener { sub = "Atención"; sync(); apply() }
+        b.chipEmergencias.setOnClickListener { sub = "Emergencias"; sync(); apply() }
+        b.chipDispositivo.setOnClickListener { sub = "Dispositivo"; sync(); apply() }
+        vm.query.observe(viewLifecycleOwner) { query = it; apply() }
+        vm.tick.observe(viewLifecycleOwner) { apply() }
+        sync(); apply()
     }
 
-    private fun selectSub(name: String) {
-        sub = name
-        binding.chipTm.isChecked = name == "Transfermóvil"
-        binding.chipAtencion.isChecked = name == "Atención"
-        binding.chipEmergencias.isChecked = name == "Emergencias"
-        binding.chipDispositivo.isChecked = name == "Dispositivo"
-        applyFilter()
+    private fun sync() {
+        b.chipTm.isChecked = sub == "Transfermóvil"
+        b.chipAtencion.isChecked = sub == "Atención"
+        b.chipEmergencias.isChecked = sub == "Emergencias"
+        b.chipDispositivo.isChecked = sub == "Dispositivo"
     }
 
-    private fun applyFilter() {
-        if (_binding == null) return
-        val list = CodesRepository.allCodes
-            .filter { it.category == sub }
+    private fun apply() {
+        if (_b == null) return
+        val list = CodesRepository.allCodes.filter { it.category == sub }
             .filter { CodesRepository.matchesQuery(it, query) }
         adapter.submitList(list)
-        binding.emptyState.isVisible = list.isEmpty()
-        binding.recyclerView.isVisible = list.isNotEmpty()
+        b.emptyState.isVisible = list.isEmpty()
+        b.recyclerView.isVisible = list.isNotEmpty()
     }
 
-    fun reload() = applyFilter()
+    override fun onDestroyView() { super.onDestroyView(); _b = null }
+}
 
-    override fun onDestroyView() {
-        super.onDestroyView()
-        _binding = null
+// ===== SETTINGS =====
+class SettingsFragment : Fragment() {
+    private var _b: FragmentSettingsBinding? = null
+    private val b get() = _b!!
+
+    override fun onCreateView(i: LayoutInflater, c: ViewGroup?, s: Bundle?): View {
+        _b = FragmentSettingsBinding.inflate(i, c, false); return b.root
     }
+
+    override fun onViewCreated(view: View, s: Bundle?) {
+        val act = requireActivity() as MainActivity
+        val p = act.prefs
+
+        val themes = listOf("Oscuro", "Claro", "Sistema")
+        b.spinnerTheme.adapter = ArrayAdapter(requireContext(), android.R.layout.simple_spinner_dropdown_item, themes)
+        b.spinnerTheme.setSelection(when (p.getThemeMode()) {
+            "light" -> 1; "system" -> 2; else -> 0
+        })
+
+        val pals = ThemeHelper.palettes.map { it.name }
+        b.spinnerPalette.adapter = ArrayAdapter(requireContext(), android.R.layout.simple_spinner_dropdown_item, pals)
+        b.spinnerPalette.setSelection(
+            ThemeHelper.palettes.indexOfFirst { it.id == p.getPaletteId() }.coerceAtLeast(0)
+        )
+
+        b.switchConfirm.isChecked = p.getConfirmBeforeDial()
+        b.switchCopy.isChecked = p.getCopyInsteadOfDial()
+        b.switchCall.isChecked = p.getUseCallAction()
+        b.switchSwipe.isChecked = p.getDisableSwipe()
+
+        b.switchConfirm.setOnCheckedChangeListener { _, v -> p.setConfirmBeforeDial(v) }
+        b.switchCopy.setOnCheckedChangeListener { _, v -> p.setCopyInsteadOfDial(v) }
+        b.switchCall.setOnCheckedChangeListener { _, v -> p.setUseCallAction(v) }
+        b.switchSwipe.setOnCheckedChangeListener { _, v ->
+            p.setDisableSwipe(v)
+            act.findViewById<ViewPager2>(R.id.viewPager)?.isUserInputEnabled = !v
+        }
+
+        b.spinnerTheme.setOnItemSelectedListener(object : android.widget.AdapterView.OnItemSelectedListener {
+            override fun onNothingSelected(parent: android.widget.AdapterView<*>?) {}
+            override fun onItemSelected(parent: android.widget.AdapterView<*>?, view: View?, pos: Int, id: Long) {
+                val mode = when (pos) { 1 -> "light"; 2 -> "system"; else -> "dark" }
+                if (mode != p.getThemeMode()) {
+                    p.setThemeMode(mode)
+                    act.recreateWithTheme()
+                }
+            }
+        })
+
+        b.spinnerPalette.setOnItemSelectedListener(object : android.widget.AdapterView.OnItemSelectedListener {
+            override fun onNothingSelected(parent: android.widget.AdapterView<*>?) {}
+            override fun onItemSelected(parent: android.widget.AdapterView<*>?, view: View?, pos: Int, id: Long) {
+                val pid = ThemeHelper.palettes[pos].id
+                if (pid != p.getPaletteId()) {
+                    p.setPaletteId(pid)
+                    act.recreateWithTheme()
+                }
+            }
+        })
+
+        b.btnPin.setOnClickListener {
+            val et = EditText(requireContext()).apply {
+                inputType = InputType.TYPE_CLASS_NUMBER or InputType.TYPE_NUMBER_VARIATION_PASSWORD
+                setText(p.getSavedPin()); setPadding(48, 32, 48, 16)
+            }
+            AlertDialog.Builder(requireContext()).setTitle("PIN transferencia")
+                .setMessage("Solo en este teléfono, sin cifrar.")
+                .setView(et)
+                .setPositiveButton("Guardar") { _, _ -> p.setSavedPin(et.text.toString().trim()) }
+                .setNegativeButton("Borrar") { _, _ -> p.setSavedPin("") }
+                .setNeutralButton("Cerrar", null).show()
+        }
+
+        b.btnContacts.setOnClickListener {
+            val contacts = p.getContacts()
+            val labels = contacts.map { "${it.first} — ${it.second}" }.ifEmpty { listOf("(vacío)") }
+            AlertDialog.Builder(requireContext()).setTitle("Contactos")
+                .setItems(labels.toTypedArray()) { _, which ->
+                    if (contacts.isEmpty()) return@setItems
+                    AlertDialog.Builder(requireContext()).setTitle(contacts[which].first)
+                        .setPositiveButton("Eliminar") { _, _ ->
+                            p.saveContacts(contacts.filterIndexed { i, _ -> i != which })
+                        }.setNegativeButton("Cerrar", null).show()
+                }
+                .setPositiveButton("Añadir") { _, _ ->
+                    val box = LinearLayout(requireContext()).apply {
+                        orientation = LinearLayout.VERTICAL; setPadding(48, 24, 48, 8)
+                    }
+                    val n = EditText(requireContext()).apply { hint = "Nombre" }
+                    val num = EditText(requireContext()).apply {
+                        hint = "Número"; inputType = InputType.TYPE_CLASS_PHONE
+                    }
+                    box.addView(n); box.addView(num)
+                    AlertDialog.Builder(requireContext()).setTitle("Nuevo").setView(box)
+                        .setPositiveButton("Guardar") { _, _ ->
+                            if (num.text.length >= 6)
+                                p.addContact(n.text.toString().ifBlank { num.text.toString() }, num.text.toString())
+                        }.setNegativeButton("Cancelar", null).show()
+                }.setNegativeButton("Cerrar", null).show()
+        }
+
+        b.btnTemplates.setOnClickListener {
+            val t = p.getTemplates()
+            val labels = t.map { "${it.first}: ${it.second} / ${it.third}" }.ifEmpty { listOf("(vacío)") }
+            AlertDialog.Builder(requireContext()).setTitle("Plantillas transferencia")
+                .setItems(labels.toTypedArray()) { _, which ->
+                    if (t.isEmpty()) return@setItems
+                    p.saveTemplates(t.filterIndexed { i, _ -> i != which })
+                    Toast.makeText(requireContext(), "Eliminada", Toast.LENGTH_SHORT).show()
+                }
+                .setPositiveButton("Añadir") { _, _ ->
+                    val box = LinearLayout(requireContext()).apply {
+                        orientation = LinearLayout.VERTICAL; setPadding(48, 24, 48, 8)
+                    }
+                    val n = EditText(requireContext()).apply { hint = "Nombre (ej. Mamá)" }
+                    val num = EditText(requireContext()).apply {
+                        hint = "Número"; inputType = InputType.TYPE_CLASS_PHONE
+                    }
+                    val amt = EditText(requireContext()).apply {
+                        hint = "Monto CUP"; inputType = InputType.TYPE_CLASS_NUMBER
+                    }
+                    box.addView(n); box.addView(num); box.addView(amt)
+                    AlertDialog.Builder(requireContext()).setTitle("Plantilla").setView(box)
+                        .setPositiveButton("Guardar") { _, _ ->
+                            if (num.text.length >= 6) {
+                                val list = t.toMutableList()
+                                list.add(0, Triple(n.text.toString().ifBlank { "Sin nombre" },
+                                    num.text.toString(), amt.text.toString()))
+                                p.saveTemplates(list)
+                            }
+                        }.setNegativeButton("Cancelar", null).show()
+                }.setNegativeButton("Cerrar", null).show()
+        }
+
+        b.btnExport.setOnClickListener {
+            val json = p.exportFavoritesJson()
+            act.copyRaw(json)
+            Toast.makeText(requireContext(), "JSON de favoritos copiado", Toast.LENGTH_LONG).show()
+        }
+
+        b.btnImport.setOnClickListener {
+            val et = EditText(requireContext()).apply {
+                hint = "Pega el JSON aquí"; minLines = 4; setPadding(32, 24, 32, 16)
+            }
+            AlertDialog.Builder(requireContext()).setTitle("Importar favoritos").setView(et)
+                .setPositiveButton("Importar") { _, _ ->
+                    val n = p.importFavoriteIds(et.text.toString())
+                    Toast.makeText(requireContext(), "Importados: $n", Toast.LENGTH_SHORT).show()
+                    (activity as? MainActivity)?.let {
+                        it.viewModel.notifyDataChanged()
+                    }
+                }.setNegativeButton("Cancelar", null).show()
+        }
+
+        b.btnChecklist.setOnClickListener {
+            AlertDialog.Builder(requireContext())
+                .setTitle("Después de recargar")
+                .setMessage(
+                    "1. Marca *222# — verifica saldo\n" +
+                    "2. Marca *222*732# — límite nacional 360 CUP\n" +
+                    "3. Si compraste plan: *222*328# datos / *133# menú"
+                )
+                .setPositiveButton("*222#") { _, _ ->
+                    CodesRepository.allCodes.find { it.id == "c1" }?.let {
+                        (activity as MainActivity).handleCodeClick(it)
+                    }
+                }
+                .setNeutralButton("*222*732#") { _, _ ->
+                    CodesRepository.allCodes.find { it.id == "c6" }?.let {
+                        (activity as MainActivity).handleCodeClick(it)
+                    }
+                }
+                .setNegativeButton("Cerrar", null).show()
+        }
+    }
+
+    override fun onDestroyView() { super.onDestroyView(); _b = null }
 }

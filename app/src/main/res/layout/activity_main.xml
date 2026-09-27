@@ -2,13 +2,11 @@
 <androidx.constraintlayout.widget.ConstraintLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:id="@+id/root"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:fitsSystemWindows="true"
     android:background="?attr/colorSurface"
-    android:clipChildren="true"
-    android:clipToPadding="true">
+    android:clipChildren="true">
 
     <com.google.android.material.appbar.MaterialToolbar
         android:id="@+id/toolbar"
@@ -19,8 +17,7 @@
         app:titleTextColor="?attr/colorOnSurface"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:elevation="0dp" />
+        app:layout_constraintEnd_toEndOf="parent" />
 
     <com.google.android.material.card.MaterialCardView
         android:id="@+id/searchCard"
@@ -45,40 +42,28 @@
             android:paddingStart="16dp"
             android:paddingEnd="8dp">
 
-            <ImageView
-                android:layout_width="20dp"
-                android:layout_height="20dp"
+            <ImageView android:layout_width="20dp" android:layout_height="20dp"
                 android:src="@android:drawable/ic_menu_search"
-                android:contentDescription="Buscar"
-                app:tint="?attr/colorOnSurfaceVariant" />
+                app:tint="?attr/colorOnSurfaceVariant"
+                android:contentDescription="Buscar" />
 
-            <EditText
-                android:id="@+id/etSearch"
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_weight="1"
-                android:layout_marginStart="12dp"
+            <EditText android:id="@+id/etSearch"
+                android:layout_width="0dp" android:layout_height="match_parent"
+                android:layout_weight="1" android:layout_marginStart="12dp"
                 android:background="@android:color/transparent"
                 android:hint="Buscar código, saldo, megas..."
-                android:textSize="14sp"
-                android:inputType="text"
-                android:imeOptions="actionSearch"
-                android:maxLines="1"
+                android:textSize="14sp" android:inputType="text"
+                android:imeOptions="actionSearch" android:maxLines="1"
                 android:textColor="?attr/colorOnSurface"
                 android:textColorHint="?attr/colorOnSurfaceVariant" />
 
-            <ImageButton
-                android:id="@+id/btnClearSearch"
-                android:layout_width="36dp"
-                android:layout_height="36dp"
+            <ImageButton android:id="@+id/btnClearSearch"
+                android:layout_width="36dp" android:layout_height="36dp"
                 android:src="@android:drawable/ic_menu_close_clear_cancel"
                 android:background="?attr/selectableItemBackgroundBorderless"
-                android:contentDescription="Limpiar"
-                android:visibility="gone"
+                android:contentDescription="Limpiar" android:visibility="gone"
                 app:tint="?attr/colorOnSurfaceVariant" />
-
         </LinearLayout>
-
     </com.google.android.material.card.MaterialCardView>
 
     <androidx.viewpager2.widget.ViewPager2
@@ -87,8 +72,6 @@
         android:layout_height="0dp"
         android:layout_marginTop="8dp"
         android:background="?attr/colorSurface"
-        android:clipChildren="true"
-        android:clipToPadding="true"
         app:layout_constraintTop_toBottomOf="@id/searchCard"
         app:layout_constraintBottom_toTopOf="@id/bottomNav"
         app:layout_constraintStart_toStartOf="parent"
@@ -107,5 +90,4 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
-
 </androidx.constraintlayout.widget.ConstraintLayout>
