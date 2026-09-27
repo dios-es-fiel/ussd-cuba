@@ -11,6 +11,8 @@ import android.os.Bundle
 import android.text.Editable
 import android.text.InputType
 import android.text.TextWatcher
+import android.view.Menu
+import android.view.MenuItem
 import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.Toast
@@ -33,11 +35,11 @@ class MainActivity : AppCompatActivity() {
     private val viewModel: AppViewModel by viewModels()
     private var updatingNav = false
 
+    // 0-4 bottom nav; 5 = Ajustes (solo desde menú toolbar)
     private val pageTitles = listOf("Inicio", "Consultas", "Planes", "Llamadas", "Más", "Ajustes")
 
     override fun onCreate(savedInstanceState: Bundle?) {
         prefs = PrefsHelper(this)
-        ThemeHelper.applyNightMode(prefs)
         ThemeHelper.applyToActivity(this, prefs)
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
@@ -49,6 +51,7 @@ class MainActivity : AppCompatActivity() {
         binding.viewPager.setPageTransformer(null)
         binding.viewPager.isUserInputEnabled = !prefs.getDisableSwipe()
 
+        // lastTab 0..4 for bottom nav; if was 5 (settings) stay valid
         val start = prefs.getLastTab().coerceIn(0, 5)
         binding.viewPager.setCurrentItem(start, false)
         binding.toolbar.title = pageTitles[start]
@@ -61,7 +64,6 @@ class MainActivity : AppCompatActivity() {
                 R.id.nav_planes -> 2
                 R.id.nav_llamadas -> 3
                 R.id.nav_mas -> 4
-                R.id.nav_settings -> 5
                 else -> 0
             }
             if (binding.viewPager.currentItem != index) {
@@ -69,23 +71,27 @@ class MainActivity : AppCompatActivity() {
             }
             binding.toolbar.title = pageTitles[index]
             prefs.setLastTab(index)
-            binding.searchCard.isVisible = index != 5
+            binding.searchCard.isVisible = true
             true
         }
 
         val ids = listOf(
             R.id.nav_home, R.id.nav_consultas, R.id.nav_planes,
-            R.id.nav_llamadas, R.id.nav_mas, R.id.nav_settings
+            R.id.nav_llamadas, R.id.nav_mas
         )
         updatingNav = true
-        binding.bottomNav.selectedItemId = ids[start]
+        if (start <= 4) {
+            binding.bottomNav.selectedItemId = ids[start]
+        }
         updatingNav = false
         binding.searchCard.isVisible = start != 5
 
         binding.viewPager.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
             override fun onPageSelected(position: Int) {
                 updatingNav = true
-                binding.bottomNav.selectedItemId = ids[position]
+                if (position <= 4) {
+                    binding.bottomNav.selectedItemId = ids[position]
+                }
                 binding.toolbar.title = pageTitles[position]
                 prefs.setLastTab(position)
                 binding.searchCard.isVisible = position != 5
@@ -108,6 +114,22 @@ class MainActivity : AppCompatActivity() {
         }
 
         handleDialIntent(intent)
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu): Boolean {
+        menuInflater.inflate(R.menu.main_menu, menu)
+        return true
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        if (item.itemId == R.id.action_settings) {
+            binding.viewPager.setCurrentItem(5, false)
+            binding.toolbar.title = pageTitles[5]
+            prefs.setLastTab(5)
+            binding.searchCard.isVisible = false
+            return true
+        }
+        return super.onOptionsItemSelected(item)
     }
 
     override fun onNewIntent(intent: Intent) {
