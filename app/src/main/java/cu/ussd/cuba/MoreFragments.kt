@@ -37,7 +37,8 @@ class MasFragment : Fragment() {
         val act = requireActivity() as MainActivity
         adapter = UssdAdapter(
             { act.handleCodeClick(it) }, { act.copyCode(it) },
-            { act.toggleFavorite(it) }, { act.prefs.isFavorite(it) }
+            { act.toggleFavorite(it) }, { act.prefs.isFavorite(it) },
+            { ThemeHelper.uiStyle(act.prefs.getUiStyleId()) }
         )
         b.recyclerView.layoutManager = LinearLayoutManager(requireContext())
         b.recyclerView.adapter = adapter
@@ -180,6 +181,12 @@ class SettingsFragment : Fragment() {
             ThemeHelper.palettes.indexOfFirst { it.id == p.getPaletteId() }.coerceAtLeast(0)
         )
 
+        val styleLabels = ThemeHelper.uiStyles.map { it.name }
+        b.spinnerUiStyle.adapter = ArrayAdapter(requireContext(), android.R.layout.simple_spinner_dropdown_item, styleLabels)
+        val styleIdx = ThemeHelper.uiStyles.indexOfFirst { it.id == p.getUiStyleId() }.coerceAtLeast(0)
+        b.spinnerUiStyle.setSelection(styleIdx)
+        b.tvUiStyleDesc.text = ThemeHelper.uiStyles[styleIdx].description
+
         b.switchConfirm.isChecked = p.getConfirmBeforeDial()
         b.switchCopy.isChecked = p.getCopyInsteadOfDial()
         b.switchCall.isChecked = p.getUseCallAction()
@@ -316,6 +323,19 @@ class SettingsFragment : Fragment() {
                 if (pid != p.getPaletteId()) {
                     p.setPaletteId(pid)
                     act.recreateWithTheme()
+                }
+            }
+        }
+
+        b.spinnerUiStyle.onItemSelectedListener = object : android.widget.AdapterView.OnItemSelectedListener {
+            override fun onNothingSelected(parent: android.widget.AdapterView<*>?) {}
+            override fun onItemSelected(parent: android.widget.AdapterView<*>?, view: View?, pos: Int, id: Long) {
+                val style = ThemeHelper.uiStyles[pos]
+                b.tvUiStyleDesc.text = style.description
+                if (style.id != p.getUiStyleId()) {
+                    p.setUiStyleId(style.id)
+                    act.notifyRefresh()
+                    Toast.makeText(requireContext(), "Estilo: ${style.name}", Toast.LENGTH_SHORT).show()
                 }
             }
         }
