@@ -2,7 +2,6 @@ package cu.ussd.cuba
 
 import android.util.TypedValue
 import android.view.LayoutInflater
-import android.view.View
 import android.view.ViewGroup
 import android.widget.LinearLayout
 import androidx.core.content.ContextCompat
@@ -32,6 +31,11 @@ class UssdAdapter(
 
     class ViewHolder(val binding: ItemUssdBinding) : RecyclerView.ViewHolder(binding.root)
 
+    /** DiffUtil no re-bindea si los códigos no cambian; hay que forzar el estilo. */
+    fun forceRestyle() {
+        notifyDataSetChanged()
+    }
+
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val binding = ItemUssdBinding.inflate(LayoutInflater.from(parent.context), parent, false)
         return ViewHolder(binding)
@@ -47,11 +51,10 @@ class UssdAdapter(
         fun dp(v: Int) = (v * density).toInt()
         fun dpF(v: Float) = v * density
 
-        // Card chrome
         val card = b.root as MaterialCardView
         card.radius = dpF(style.cornerRadiusDp)
         card.cardElevation = dpF(style.cardElevationDp)
-        card.strokeWidth = dp(style.strokeWidthDp.toInt().coerceAtLeast(if (style.strokeWidthDp > 0) 1 else 0))
+        card.strokeWidth = if (style.strokeWidthDp > 0f) dpF(style.strokeWidthDp).toInt().coerceAtLeast(1) else 0
         val lp = card.layoutParams as? ViewGroup.MarginLayoutParams
         lp?.let {
             val m = dp(style.itemMarginVDp)
@@ -60,7 +63,6 @@ class UssdAdapter(
             card.layoutParams = it
         }
 
-        // Inner padding
         val inner = card.getChildAt(0) as? LinearLayout
         inner?.updatePadding(
             dp(style.itemPaddingDp),
@@ -69,10 +71,8 @@ class UssdAdapter(
             dp(style.itemPaddingDp)
         )
 
-        // Accent bar
         b.accentBar.isVisible = style.showAccentBar
 
-        // Text
         b.tvTitle.text = item.title
         b.tvTitle.setTextSize(TypedValue.COMPLEX_UNIT_SP, style.titleSp)
         b.tvCode.text = item.code.replace(Regex("\\{[^}]+\\}"), "…")
@@ -81,7 +81,6 @@ class UssdAdapter(
         b.tvDescription.setTextSize(TypedValue.COMPLEX_UNIT_SP, style.descSp)
         b.tvDescription.isVisible = style.showDescription && item.description.isNotBlank()
 
-        // Favorite button size
         val favSize = dp(style.favButtonDp)
         b.btnFavorite.updateLayoutParams {
             width = favSize
