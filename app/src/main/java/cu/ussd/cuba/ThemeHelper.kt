@@ -16,6 +16,28 @@ object ThemeHelper {
         val containerLight: Int
     )
 
+    /**
+     * Estilos de interfaz (independientes de la paleta de color).
+     * Pensados para el usuario promedio: nombres claros y cambios visibles.
+     */
+    data class UiStyle(
+        val id: String,
+        val name: String,
+        val description: String,
+        val cornerRadiusDp: Float,
+        val cardElevationDp: Float,
+        val itemMarginVDp: Int,
+        val itemPaddingDp: Int,
+        val titleSp: Float,
+        val codeSp: Float,
+        val descSp: Float,
+        val showAccentBar: Boolean,
+        val showDescription: Boolean,
+        val strokeWidthDp: Float,
+        val favButtonDp: Int,
+        val listPaddingHDp: Int
+    )
+
     val palettes = listOf(
         Palette("cuba", "Cuba (rojo)", 0xFFEF5350.toInt(), 0xFFC62828.toInt(), 0xFF5C1A1A.toInt(), 0xFFFFCDD2.toInt()),
         Palette("azul", "Océano", 0xFF42A5F5.toInt(), 0xFF1565C0.toInt(), 0xFF0D3B66.toInt(), 0xFFBBDEFB.toInt()),
@@ -24,6 +46,114 @@ object ThemeHelper {
         Palette("naranja", "Atardecer", 0xFFFFA726.toInt(), 0xFFEF6C00.toInt(), 0xFF4A2C0A.toInt(), 0xFFFFE0B2.toInt()),
         Palette("turquesa", "Caribe", 0xFF26C6DA.toInt(), 0xFF00838F.toInt(), 0xFF0A3A40.toInt(), 0xFFB2EBF2.toInt())
     )
+
+    val uiStyles = listOf(
+        UiStyle(
+            id = "clasico",
+            name = "Clásico",
+            description = "Como la mayoría de apps USSD (UtilEs / QvaCall)",
+            cornerRadiusDp = 14f,
+            cardElevationDp = 0f,
+            itemMarginVDp = 4,
+            itemPaddingDp = 12,
+            titleSp = 13f,
+            codeSp = 14f,
+            descSp = 11f,
+            showAccentBar = true,
+            showDescription = true,
+            strokeWidthDp = 0f,
+            favButtonDp = 36,
+            listPaddingHDp = 12
+        ),
+        UiStyle(
+            id = "minimalista",
+            name = "Minimalista",
+            description = "Limpio, sin adornos, solo lo esencial",
+            cornerRadiusDp = 8f,
+            cardElevationDp = 0f,
+            itemMarginVDp = 2,
+            itemPaddingDp = 10,
+            titleSp = 12f,
+            codeSp = 15f,
+            descSp = 10f,
+            showAccentBar = false,
+            showDescription = false,
+            strokeWidthDp = 0f,
+            favButtonDp = 32,
+            listPaddingHDp = 16
+        ),
+        UiStyle(
+            id = "profesional",
+            name = "Profesional",
+            description = "Refinado, como las mejores apps de productividad",
+            cornerRadiusDp = 12f,
+            cardElevationDp = 1f,
+            itemMarginVDp = 5,
+            itemPaddingDp = 14,
+            titleSp = 13f,
+            codeSp = 14f,
+            descSp = 11f,
+            showAccentBar = true,
+            showDescription = true,
+            strokeWidthDp = 0.5f,
+            favButtonDp = 36,
+            listPaddingHDp = 14
+        ),
+        UiStyle(
+            id = "compacto",
+            name = "Compacto",
+            description = "Más códigos en pantalla, ideal si usas muchos",
+            cornerRadiusDp = 6f,
+            cardElevationDp = 0f,
+            itemMarginVDp = 1,
+            itemPaddingDp = 8,
+            titleSp = 12f,
+            codeSp = 13f,
+            descSp = 10f,
+            showAccentBar = true,
+            showDescription = false,
+            strokeWidthDp = 0f,
+            favButtonDp = 30,
+            listPaddingHDp = 8
+        ),
+        UiStyle(
+            id = "comodo",
+            name = "Cómodo",
+            description = "Texto grande y botones amplios, fácil de tocar",
+            cornerRadiusDp = 16f,
+            cardElevationDp = 2f,
+            itemMarginVDp = 6,
+            itemPaddingDp = 16,
+            titleSp = 15f,
+            codeSp = 16f,
+            descSp = 13f,
+            showAccentBar = true,
+            showDescription = true,
+            strokeWidthDp = 0f,
+            favButtonDp = 44,
+            listPaddingHDp = 12
+        ),
+        UiStyle(
+            id = "tarjetas",
+            name = "Tarjetas",
+            description = "Tarjetas elevadas y redondeadas, aspecto amigable",
+            cornerRadiusDp = 20f,
+            cardElevationDp = 4f,
+            itemMarginVDp = 8,
+            itemPaddingDp = 14,
+            titleSp = 13f,
+            codeSp = 15f,
+            descSp = 11f,
+            showAccentBar = false,
+            showDescription = true,
+            strokeWidthDp = 0f,
+            favButtonDp = 40,
+            listPaddingHDp = 16
+        )
+    )
+
+    fun uiStyle(id: String): UiStyle =
+        uiStyles.find { it.id == id } ?: uiStyles.first()
 
     fun applyNightMode(prefs: PrefsHelper) {
         val mode = when (prefs.getThemeMode()) {
@@ -47,7 +177,6 @@ object ThemeHelper {
         }
     }
 
-    /** Prefer prefs over configuration to avoid race before super.onCreate */
     fun isDark(context: Context, prefs: PrefsHelper? = null): Boolean {
         if (prefs != null) {
             return when (prefs.getThemeMode()) {
