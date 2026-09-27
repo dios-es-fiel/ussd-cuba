@@ -18,7 +18,6 @@ import android.widget.ArrayAdapter
 import android.widget.EditText
 import android.widget.GridLayout
 import android.widget.LinearLayout
-import android.widget.Spinner
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.viewModels
@@ -34,7 +33,6 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.viewpager2.adapter.FragmentStateAdapter
 import androidx.viewpager2.widget.ViewPager2
 import com.google.android.material.card.MaterialCardView
-import com.google.android.material.materialswitch.MaterialSwitch
 import cu.ussd.cuba.databinding.ActivityMainBinding
 import cu.ussd.cuba.databinding.FragmentHomeBinding
 import cu.ussd.cuba.databinding.FragmentListBinding
@@ -88,7 +86,6 @@ class MainActivity : AppCompatActivity() {
             true
         }
 
-        // Sync bottom nav with start tab
         val ids = listOf(
             R.id.nav_home, R.id.nav_consultas, R.id.nav_planes,
             R.id.nav_llamadas, R.id.nav_mas, R.id.nav_settings
@@ -136,6 +133,10 @@ class MainActivity : AppCompatActivity() {
         dialRaw(code)
     }
 
+    fun notifyRefresh() {
+        viewModel.notifyDataChanged()
+    }
+
     fun handleCodeClick(code: UssdCode) {
         if (prefs.getCopyInsteadOfDial()) {
             if (code.needsParams) showParamsDialog(code, copyOnly = true)
@@ -172,15 +173,11 @@ class MainActivity : AppCompatActivity() {
             templates.take(4).forEach { (name, number, amount) ->
                 val chip = com.google.android.material.chip.Chip(this).apply {
                     text = name
-                    setOnClickListener {
-                        // fill later after edits created — store on tags
-                    }
+                    tag = Triple(name, number, amount)
                 }
-                chip.tag = Triple(name, number, amount)
                 row.addView(chip)
             }
             container.addView(row)
-            // Will wire after edits exist
             container.tag = row
         }
 
@@ -210,7 +207,6 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        // Wire templates
         (container.tag as? LinearLayout)?.let { row ->
             for (i in 0 until row.childCount) {
                 val chip = row.getChildAt(i) as com.google.android.material.chip.Chip
@@ -349,7 +345,6 @@ class MainActivity : AppCompatActivity() {
     }
 }
 
-// ===== HOME =====
 class HomeFragment : Fragment() {
     private var _b: FragmentHomeBinding? = null
     private val b get() = _b!!
@@ -367,9 +362,9 @@ class HomeFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         val act = requireActivity() as MainActivity
         favAdapter = ad(act); recentAdapter = ad(act); mostAdapter = ad(act)
-        b.rvFavorites.layoutManager = LinearLayoutManager(ctx())
-        b.rvRecents.layoutManager = LinearLayoutManager(ctx())
-        b.rvMostUsed.layoutManager = LinearLayoutManager(ctx())
+        b.rvFavorites.layoutManager = LinearLayoutManager(requireContext())
+        b.rvRecents.layoutManager = LinearLayoutManager(requireContext())
+        b.rvMostUsed.layoutManager = LinearLayoutManager(requireContext())
         b.rvFavorites.adapter = favAdapter
         b.rvRecents.adapter = recentAdapter
         b.rvMostUsed.adapter = mostAdapter
@@ -384,7 +379,6 @@ class HomeFragment : Fragment() {
         refresh()
     }
 
-    private fun ctx() = requireContext()
     private fun ad(act: MainActivity) = UssdAdapter(
         { act.handleCodeClick(it) }, { act.copyCode(it) },
         { act.toggleFavorite(it) }, { act.prefs.isFavorite(it) }
@@ -414,7 +408,7 @@ class HomeFragment : Fragment() {
             item.setOnClickListener { act.handleCodeClick(code) }
             item.setOnLongClickListener {
                 val opts = CodesRepository.allCodes.map { "${it.title} (${it.code})" }.toTypedArray()
-                AlertDialog.Builder(ctx()).setTitle("Elegir acceso").setItems(opts) { _, w ->
+                AlertDialog.Builder(requireContext()).setTitle("Elegir acceso").setItems(opts) { _, w ->
                     val ids = act.prefs.getShortcutIds().toMutableList()
                     while (ids.size < 4) ids.add("c1")
                     ids[i] = CodesRepository.allCodes[w].id
@@ -454,7 +448,6 @@ class HomeFragment : Fragment() {
     override fun onDestroyView() { super.onDestroyView(); _b = null }
 }
 
-// ===== LIST =====
 class ListFragment : Fragment() {
     private var _b: FragmentListBinding? = null
     private val b get() = _b!!
@@ -511,7 +504,6 @@ class ListFragment : Fragment() {
     override fun onDestroyView() { super.onDestroyView(); _b = null }
 }
 
-// ===== MAS =====
 class MasFragment : Fragment() {
     private var _b: FragmentMasBinding? = null
     private val b get() = _b!!
@@ -560,7 +552,6 @@ class MasFragment : Fragment() {
     override fun onDestroyView() { super.onDestroyView(); _b = null }
 }
 
-// ===== SETTINGS =====
 class SettingsFragment : Fragment() {
     private var _b: FragmentSettingsBinding? = null
     private val b get() = _b!!
@@ -598,7 +589,7 @@ class SettingsFragment : Fragment() {
             act.findViewById<ViewPager2>(R.id.viewPager)?.isUserInputEnabled = !v
         }
 
-        b.spinnerTheme.setOnItemSelectedListener(object : android.widget.AdapterView.OnItemSelectedListener {
+        b.spinnerTheme.onItemSelectedListener = object : android.widget.AdapterView.OnItemSelectedListener {
             override fun onNothingSelected(parent: android.widget.AdapterView<*>?) {}
             override fun onItemSelected(parent: android.widget.AdapterView<*>?, view: View?, pos: Int, id: Long) {
                 val mode = when (pos) { 1 -> "light"; 2 -> "system"; else -> "dark" }
@@ -607,9 +598,9 @@ class SettingsFragment : Fragment() {
                     act.recreateWithTheme()
                 }
             }
-        })
+        }
 
-        b.spinnerPalette.setOnItemSelectedListener(object : android.widget.AdapterView.OnItemSelectedListener {
+        b.spinnerPalette.onItemSelectedListener = object : android.widget.AdapterView.OnItemSelectedListener {
             override fun onNothingSelected(parent: android.widget.AdapterView<*>?) {}
             override fun onItemSelected(parent: android.widget.AdapterView<*>?, view: View?, pos: Int, id: Long) {
                 val pid = ThemeHelper.palettes[pos].id
@@ -618,7 +609,7 @@ class SettingsFragment : Fragment() {
                     act.recreateWithTheme()
                 }
             }
-        })
+        }
 
         b.btnPin.setOnClickListener {
             val et = EditText(requireContext()).apply {
@@ -695,8 +686,7 @@ class SettingsFragment : Fragment() {
         }
 
         b.btnExport.setOnClickListener {
-            val json = p.exportFavoritesJson()
-            act.copyRaw(json)
+            act.copyRaw(p.exportFavoritesJson())
             Toast.makeText(requireContext(), "JSON de favoritos copiado", Toast.LENGTH_LONG).show()
         }
 
@@ -708,9 +698,7 @@ class SettingsFragment : Fragment() {
                 .setPositiveButton("Importar") { _, _ ->
                     val n = p.importFavoriteIds(et.text.toString())
                     Toast.makeText(requireContext(), "Importados: $n", Toast.LENGTH_SHORT).show()
-                    (activity as? MainActivity)?.let {
-                        it.viewModel.notifyDataChanged()
-                    }
+                    act.notifyRefresh()
                 }.setNegativeButton("Cancelar", null).show()
         }
 
@@ -723,14 +711,10 @@ class SettingsFragment : Fragment() {
                     "3. Si compraste plan: *222*328# datos / *133# menú"
                 )
                 .setPositiveButton("*222#") { _, _ ->
-                    CodesRepository.allCodes.find { it.id == "c1" }?.let {
-                        (activity as MainActivity).handleCodeClick(it)
-                    }
+                    CodesRepository.allCodes.find { it.id == "c1" }?.let { act.handleCodeClick(it) }
                 }
                 .setNeutralButton("*222*732#") { _, _ ->
-                    CodesRepository.allCodes.find { it.id == "c6" }?.let {
-                        (activity as MainActivity).handleCodeClick(it)
-                    }
+                    CodesRepository.allCodes.find { it.id == "c6" }?.let { act.handleCodeClick(it) }
                 }
                 .setNegativeButton("Cerrar", null).show()
         }
