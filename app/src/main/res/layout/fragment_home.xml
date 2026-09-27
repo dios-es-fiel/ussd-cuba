@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.core.widget.NestedScrollView
     xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:fillViewport="true"
+    android:background="?attr/colorSurface"
     android:clipToPadding="false"
     android:paddingBottom="16dp">
 
@@ -14,59 +14,42 @@
         android:orientation="vertical"
         android:paddingHorizontal="16dp">
 
-        <!-- Accesos rápidos -->
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
             android:layout_marginBottom="10dp"
-            android:text="Accesos rápidos"
-            android:textSize="13sp"
+            android:text="Accesos rápidos  · mantén para cambiar"
+            android:textSize="12sp"
             android:textStyle="bold"
-            android:textColor="?attr/colorOnSurfaceVariant"
-            android:letterSpacing="0.05" />
+            android:textColor="?attr/colorOnSurfaceVariant" />
 
         <GridLayout
             android:id="@+id/gridShortcuts"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:columnCount="2"
-            android:useDefaultMargins="false"
-            android:alignmentMode="alignBounds">
+            android:alignmentMode="alignBounds" />
 
-            <!-- Filled dynamically -->
-
-        </GridLayout>
-
-        <!-- Favoritos -->
-        <LinearLayout
+        <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="20dp"
             android:layout_marginBottom="8dp"
-            android:orientation="horizontal"
-            android:gravity="center_vertical">
+            android:text="Favoritos (máx. 6 en inicio)"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:textColor="?attr/colorOnSurfaceVariant" />
 
-            <TextView
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="Favoritos"
-                android:textSize="13sp"
-                android:textStyle="bold"
-                android:textColor="?attr/colorOnSurfaceVariant"
-                android:letterSpacing="0.05" />
-
-            <TextView
-                android:id="@+id/tvFavEmpty"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Toca ★ en un código"
-                android:textSize="11sp"
-                android:textColor="?attr/colorOnSurfaceVariant"
-                android:visibility="gone" />
-
-        </LinearLayout>
+        <TextView
+            android:id="@+id/tvFavEmpty"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Toca ★ en cualquier código"
+            android:textSize="13sp"
+            android:textColor="?attr/colorOnSurfaceVariant"
+            android:padding="8dp"
+            android:visibility="gone" />
 
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/rvFavorites"
@@ -75,17 +58,15 @@
             android:nestedScrollingEnabled="false"
             android:overScrollMode="never" />
 
-        <!-- Recientes -->
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
             android:layout_marginBottom="8dp"
             android:text="Recientes"
-            android:textSize="13sp"
+            android:textSize="12sp"
             android:textStyle="bold"
-            android:textColor="?attr/colorOnSurfaceVariant"
-            android:letterSpacing="0.05" />
+            android:textColor="?attr/colorOnSurfaceVariant" />
 
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/rvRecents"

@@ -12,6 +12,7 @@
         <item name="colorOnSurface">#E8E8E8</item>
         <item name="colorOnSurfaceVariant">#A0A0A0</item>
         <item name="colorOutlineVariant">#333333</item>
+        <item name="android:colorBackground">#121212</item>
         <item name="android:statusBarColor">#121212</item>
         <item name="android:navigationBarColor">#121212</item>
         <item name="android:windowBackground">#121212</item>

@@ -9,6 +9,22 @@
         app:showAsAction="never" />
 
     <item
+        android:id="@+id/action_copy_mode"
+        android:title="Solo copiar (no marcar)"
+        android:checkable="true"
+        app:showAsAction="never" />
+
+    <item
+        android:id="@+id/action_pin"
+        android:title="PIN de transferencia"
+        app:showAsAction="never" />
+
+    <item
+        android:id="@+id/action_contacts"
+        android:title="Contactos frecuentes"
+        app:showAsAction="never" />
+
+    <item
         android:id="@+id/action_theme_dark"
         android:title="Tema oscuro"
         app:showAsAction="never" />

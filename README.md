@@ -1,11 +1,14 @@
-# Códigos USSD Cuba v2.1
+# Códigos USSD Cuba v2.2
 
-## Novedades v2.1
-- **Bottom navigation** con 5 módulos: Inicio, Consultas, Planes, Llamadas, Más
-- **Inicio**: accesos rápidos en grid + favoritos + recientes (sin scroll largo)
-- **Tema oscuro por defecto** (menú: oscuro / claro / sistema)
-- UI más limpia: cards compactas, barra de búsqueda fija, acento de color
-- Swipe entre pestañas
+## Fixes
+- **Sin rastro al cambiar de pestaña**: cambio instantáneo (sin smooth scroll), fondos opacos, animators desactivados
+- Búsqueda fiable con ViewModel (todas las pestañas + Inicio)
+- Botón limpiar búsqueda
+- Tema claro/oscuro con `values-notnight`
+- Transfermóvil / Atención / Emergencias en sub-chips de Más
+- Contactos frecuentes + PIN de transferencia
+- Accesos rápidos editables (mantener pulsado)
+- Modo "solo copiar"
 
 ## Descargar
-https://github.com/luiseilerys/ussd-cuba/actions → último workflow → artifact **ussd-cuba-apk**
+https://github.com/luiseilerys/ussd-cuba/actions → artifact **ussd-cuba-apk**
