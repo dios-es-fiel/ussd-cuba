@@ -24,11 +24,12 @@ import android.view.WindowManager
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.core.app.NotificationCompat
+import java.util.concurrent.Executors
 
 /**
- * Floating overlays:
- * - Remaining session time countdown (user-set duration)
- * - Real-time network speed (download / upload)
+ * Overlays flotantes:
+ * - Tiempo restante Nauta REAL (consulta portal ETECSA + countdown cada segundo)
+ * - Velocidad de red en tiempo real
  */
 class OverlayService : Service() {
 
@@ -36,18 +37,23 @@ class OverlayService : Service() {
     private var timeView: View? = null
     private var speedView: View? = null
     private val handler = Handler(Looper.getMainLooper())
+    private val bg = Executors.newSingleThreadExecutor()
     private var lastRx = 0L
     private var lastTx = 0L
     private var lastTs = 0L
     private var sessionEndMs = 0L
+    /** Segundos restantes de Nauta (countdown local entre syncs). */
+    private var nautaSec = -1L
+    private var lastNautaSync = 0L
+    private var syncInProgress = false
     private lateinit var prefs: PrefsHelper
 
     private val tick = object : Runnable {
         override fun run() {
             updateTime()
             updateSpeed()
-            val interval = prefs.getSpeedIntervalMs().coerceIn(500, 5000)
-            handler.postDelayed(this, interval.toLong())
+            maybeSyncNauta()
+            handler.postDelayed(this, 1000L) // siempre cada segundo para el tiempo
         }
     }
 
@@ -62,14 +68,28 @@ class OverlayService : Service() {
         lastRx = TrafficStats.getTotalRxBytes()
         lastTx = TrafficStats.getTotalTxBytes()
         lastTs = System.currentTimeMillis()
+
+        // Restaurar tiempo Nauta cacheado
+        nautaSec = prefs.getNautaRemainingSec()
+        lastNautaSync = prefs.getNautaLastSyncMs()
+        if (nautaSec > 0 && lastNautaSync > 0) {
+            val elapsed = (System.currentTimeMillis() - lastNautaSync) / 1000
+            nautaSec = (nautaSec - elapsed).coerceAtLeast(0)
+        }
+
         val remaining = prefs.getSessionRemainingMs()
         if (remaining > 0) sessionEndMs = System.currentTimeMillis() + remaining
-        else if (prefs.getShowFloatingTime()) {
+        else if (prefs.getShowFloatingTime() && !prefs.getUseNautaRealTime()) {
             sessionEndMs = System.currentTimeMillis() + prefs.getSessionDurationMin() * 60_000L
             prefs.setSessionEndMs(sessionEndMs)
         }
+
         applyOverlays()
         handler.post(tick)
+        // Primera sincronización inmediata
+        if (prefs.getShowFloatingTime() && prefs.getUseNautaRealTime()) {
+            syncNautaNow()
+        }
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -85,7 +105,14 @@ class OverlayService : Service() {
                 prefs.setSessionDurationMin(min)
                 prefs.setSessionEndMs(sessionEndMs)
                 prefs.setShowFloatingTime(true)
+                prefs.setUseNautaRealTime(false)
                 applyOverlays()
+            }
+            ACTION_SYNC_NAUTA -> {
+                prefs.setShowFloatingTime(true)
+                prefs.setUseNautaRealTime(true)
+                applyOverlays()
+                syncNautaNow()
             }
         }
         return START_STICKY
@@ -136,7 +163,7 @@ class OverlayService : Service() {
             setPadding(dp(12), dp(8), dp(12), dp(8))
             setTextSize(TypedValue.COMPLEX_UNIT_SP, prefs.getOverlayTextSizeSp().toFloat())
             typeface = Typeface.MONOSPACE
-            text = "⏱ --:--"
+            text = "⏱ Nauta …"
         }
         val params = baseParams()
         params.y = prefs.getOverlayY()
@@ -204,6 +231,23 @@ class OverlayService : Service() {
 
     private fun updateTime() {
         val tv = timeView as? TextView ?: return
+
+        if (prefs.getUseNautaRealTime()) {
+            // Countdown local cada segundo
+            if (nautaSec > 0) {
+                nautaSec--
+                prefs.setNautaRemainingSec(nautaSec)
+            }
+            val label = when {
+                nautaSec < 0 -> "⏱ Nauta …"
+                nautaSec == 0L -> "⏱ Nauta 00:00"
+                else -> "⏱ ${NautaClient.formatSeconds(nautaSec)}"
+            }
+            tv.text = label
+            return
+        }
+
+        // Modo contador manual (fallback)
         if (sessionEndMs <= 0L) {
             val saved = prefs.getSessionEndMs()
             if (saved > System.currentTimeMillis()) sessionEndMs = saved
@@ -214,14 +258,46 @@ class OverlayService : Service() {
         }
         val left = (sessionEndMs - System.currentTimeMillis()).coerceAtLeast(0)
         prefs.setSessionRemainingMs(left)
-        val totalSec = (left / 1000).toInt()
-        val h = totalSec / 3600
-        val m = (totalSec % 3600) / 60
-        val s = totalSec % 60
-        tv.text = if (h > 0) String.format("⏱ %d:%02d:%02d", h, m, s)
-        else String.format("⏱ %02d:%02d", m, s)
-        if (left == 0L && prefs.getShowFloatingTime()) {
-            // keep showing 00:00
+        val totalSec = left / 1000
+        tv.text = "⏱ ${NautaClient.formatSeconds(totalSec)}"
+    }
+
+    private fun maybeSyncNauta() {
+        if (!prefs.getShowFloatingTime() || !prefs.getUseNautaRealTime()) return
+        val user = prefs.getNautaUser()
+        if (user.isBlank()) return
+        val intervalMs = prefs.getNautaSyncIntervalSec() * 1000L
+        if (System.currentTimeMillis() - lastNautaSync < intervalMs && nautaSec >= 0) return
+        if (syncInProgress) return
+        syncNautaNow()
+    }
+
+    private fun syncNautaNow() {
+        val user = prefs.getNautaUser()
+        val pass = prefs.getNautaPass()
+        if (user.isBlank()) {
+            handler.post {
+                (timeView as? TextView)?.text = "⏱ Sin cuenta"
+            }
+            return
+        }
+        syncInProgress = true
+        bg.execute {
+            val info = NautaClient.fetchBest(user, pass, prefs.getNautaUuid().ifBlank { null })
+            handler.post {
+                syncInProgress = false
+                if (info != null && info.remainingSeconds >= 0) {
+                    nautaSec = info.remainingSeconds
+                    lastNautaSync = System.currentTimeMillis()
+                    prefs.setNautaRemainingSec(nautaSec)
+                    prefs.setNautaLastSyncMs(lastNautaSync)
+                    (timeView as? TextView)?.text =
+                        "⏱ ${NautaClient.formatSeconds(nautaSec)}"
+                } else if (nautaSec < 0) {
+                    (timeView as? TextView)?.text = "⏱ Error sync"
+                }
+                // si falla pero ya teníamos valor, seguimos el countdown local
+            }
         }
     }
 
@@ -239,7 +315,7 @@ class OverlayService : Service() {
         val upBps = ((tx - lastTx) / dt).coerceAtLeast(0.0)
         lastRx = rx; lastTx = tx; lastTs = now
 
-        val unit = prefs.getSpeedUnit() // 0=KB/s 1=MB/s 2=auto
+        val unit = prefs.getSpeedUnit()
         fun fmt(bps: Double): String {
             val kb = bps / 1024.0
             val mb = kb / 1024.0
@@ -282,9 +358,12 @@ class OverlayService : Service() {
             this, 0, Intent(this, MainActivity::class.java),
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
+        val timeText = if (prefs.getUseNautaRealTime() && nautaSec >= 0)
+            "Nauta ${NautaClient.formatSeconds(nautaSec)}"
+        else "Tiempo / velocidad"
         return NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle("USSD Cuba · Overlay activo")
-            .setContentText("Tiempo / velocidad en pantalla")
+            .setContentTitle("USSD Cuba · Overlay")
+            .setContentText(timeText)
             .setSmallIcon(android.R.drawable.ic_menu_info_details)
             .setContentIntent(open)
             .setOngoing(true)
@@ -296,6 +375,7 @@ class OverlayService : Service() {
         handler.removeCallbacks(tick)
         removeTime()
         removeSpeed()
+        bg.shutdownNow()
         super.onDestroy()
     }
 
@@ -305,6 +385,7 @@ class OverlayService : Service() {
         const val ACTION_REFRESH = "cu.ussd.cuba.OVERLAY_REFRESH"
         const val ACTION_STOP = "cu.ussd.cuba.OVERLAY_STOP"
         const val ACTION_SET_TIME = "cu.ussd.cuba.OVERLAY_SET_TIME"
+        const val ACTION_SYNC_NAUTA = "cu.ussd.cuba.OVERLAY_SYNC_NAUTA"
         const val EXTRA_MINUTES = "minutes"
 
         fun start(ctx: Context) {
@@ -326,6 +407,14 @@ class OverlayService : Service() {
         fun setTime(ctx: Context, minutes: Int) {
             val i = Intent(ctx, OverlayService::class.java).setAction(ACTION_SET_TIME)
             i.putExtra(EXTRA_MINUTES, minutes)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
+                ctx.startForegroundService(i)
+            else
+                ctx.startService(i)
+        }
+
+        fun syncNauta(ctx: Context) {
+            val i = Intent(ctx, OverlayService::class.java).setAction(ACTION_SYNC_NAUTA)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
                 ctx.startForegroundService(i)
             else
