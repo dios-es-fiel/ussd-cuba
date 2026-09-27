@@ -157,6 +157,10 @@ class MainActivity : AppCompatActivity() {
         viewModel.notifyDataChanged()
     }
 
+    fun notifyStyleChanged() {
+        viewModel.notifyStyleChanged()
+    }
+
     fun handleCodeClick(code: UssdCode) {
         if (prefs.getCopyInsteadOfDial()) {
             if (code.needsParams) showParamsDialog(code, copyOnly = true)
