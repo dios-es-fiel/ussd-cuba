@@ -22,6 +22,7 @@ class MainActivity : AppCompatActivity() {
     private val CALL_PERMISSION_REQUEST = 100
     private var pendingCode: String? = null
     private var currentCategory: String = "Todos"
+    private var currentQuery: String = ""
 
     private val allCodes = listOf(
         // === CONSULTAS ===
@@ -95,7 +96,10 @@ class MainActivity : AppCompatActivity() {
         UssdCode("TM - Lista de servicios", "*444*71#", "Ver todos los servicios disponibles", "Transfermóvil")
     )
 
-    private val categories = listOf("Todos", "Consultas", "Planes", "Recargas", "Llamadas", "Internacional", "Dispositivo", "Atención", "Emergencias", "Transfermóvil")
+    private val categories = listOf(
+        "Todos", "Consultas", "Planes", "Recargas", "Llamadas",
+        "Internacional", "Dispositivo", "Atención", "Emergencias", "Transfermóvil"
+    )
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -109,6 +113,7 @@ class MainActivity : AppCompatActivity() {
         }
         binding.recyclerView.layoutManager = LinearLayoutManager(this)
         binding.recyclerView.adapter = adapter
+        binding.tvCount.text = "${allCodes.size} códigos"
 
         setupChips()
     }
@@ -122,20 +127,20 @@ class MainActivity : AppCompatActivity() {
                 isChecked = cat == "Todos"
                 setOnClickListener {
                     currentCategory = cat
-                    filterCodes(binding.searchView.query?.toString() ?: "")
                     // Uncheck others
                     for (i in 0 until binding.chipGroup.childCount) {
                         val c = binding.chipGroup.getChildAt(i) as Chip
                         c.isChecked = c.text == cat
                     }
+                    applyFilter()
                 }
             }
             binding.chipGroup.addView(chip)
         }
     }
 
-    private fun filterCodes(query: String) {
-        val q = query.trim().lowercase()
+    private fun applyFilter() {
+        val q = currentQuery.trim().lowercase()
         val filtered = allCodes.filter { code ->
             val matchCategory = currentCategory == "Todos" || code.category == currentCategory
             val matchQuery = q.isEmpty() ||
@@ -156,25 +161,19 @@ class MainActivity : AppCompatActivity() {
         searchView.queryHint = "Buscar código, saldo, recarga..."
         searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
             override fun onQueryTextSubmit(query: String?): Boolean {
-                filterCodes(query ?: "")
+                currentQuery = query ?: ""
+                applyFilter()
                 return true
             }
 
             override fun onQueryTextChange(newText: String?): Boolean {
-                filterCodes(newText ?: "")
+                currentQuery = newText ?: ""
+                applyFilter()
                 return true
             }
         })
-        // Keep reference for chip filtering
-        binding.searchView = searchView
         return true
     }
-
-    // Helper to keep SearchView accessible (we store it in a var via binding extension)
-    private var searchViewRef: SearchView? = null
-    private var ActivityMainBinding.searchView: SearchView?
-        get() = searchViewRef
-        set(value) { searchViewRef = value }
 
     private fun dialUssd(code: String) {
         val needsManual = code.contains("número", ignoreCase = true) ||
@@ -182,9 +181,7 @@ class MainActivity : AppCompatActivity() {
                 code.contains("clave") ||
                 code.contains("monto")
 
-        val cleanCode = code
-            .replace(" ", "")
-            .trim()
+        val cleanCode = code.replace(" ", "").trim()
 
         if (needsManual) {
             Toast.makeText(this, "Completa el número/clave/monto en el marcador", Toast.LENGTH_LONG).show()
