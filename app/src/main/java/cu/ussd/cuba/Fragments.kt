@@ -41,12 +41,14 @@ class HomeFragment : Fragment() {
         b.rvFavorites.itemAnimator = null
         b.rvRecents.itemAnimator = null
         b.rvMostUsed.itemAnimator = null
+        applyListPadding(act)
         b.btnEmergency.setOnClickListener { act.showEmergencyPanel() }
         b.tvSeeAllFav.setOnClickListener { act.showAllFavorites() }
         setupShortcuts()
         vm.query.observe(viewLifecycleOwner) { query = it; refresh() }
         vm.tick.observe(viewLifecycleOwner) { refresh() }
         vm.styleTick.observe(viewLifecycleOwner) {
+            applyListPadding(act)
             setupShortcuts()
             favAdapter.forceRestyle()
             recentAdapter.forceRestyle()
@@ -60,6 +62,18 @@ class HomeFragment : Fragment() {
         { act.toggleFavorite(it) }, { act.prefs.isFavorite(it) },
         { ThemeHelper.uiStyle(act.prefs.getUiStyleId()) }
     )
+
+    private fun applyListPadding(act: MainActivity) {
+        if (_b == null) return
+        val style = ThemeHelper.uiStyle(act.prefs.getUiStyleId())
+        val h = (style.listPaddingHDp * resources.displayMetrics.density).toInt()
+        b.rvFavorites.setPadding(h, b.rvFavorites.paddingTop, h, b.rvFavorites.paddingBottom)
+        b.rvRecents.setPadding(h, b.rvRecents.paddingTop, h, b.rvRecents.paddingBottom)
+        b.rvMostUsed.setPadding(h, b.rvMostUsed.paddingTop, h, b.rvMostUsed.paddingBottom)
+        b.rvFavorites.clipToPadding = false
+        b.rvRecents.clipToPadding = false
+        b.rvMostUsed.clipToPadding = false
+    }
 
     private fun setupShortcuts() {
         if (_b == null) return
@@ -76,6 +90,7 @@ class HomeFragment : Fragment() {
             val item = layoutInflater.inflate(R.layout.item_shortcut, grid, false) as MaterialCardView
             item.radius = style.cornerRadiusDp * density
             item.cardElevation = style.cardElevationDp * density
+            item.useCompatPadding = style.cardElevationDp > 0f
             item.layoutParams = GridLayout.LayoutParams().apply {
                 width = 0
                 height = ViewGroup.LayoutParams.WRAP_CONTENT
@@ -166,10 +181,22 @@ class ListFragment : Fragment() {
         b.recyclerView.layoutManager = LinearLayoutManager(requireContext())
         b.recyclerView.adapter = adapter
         b.recyclerView.itemAnimator = null
+        applyListPadding(act)
         vm.query.observe(viewLifecycleOwner) { query = it; apply() }
         vm.tick.observe(viewLifecycleOwner) { apply() }
-        vm.styleTick.observe(viewLifecycleOwner) { adapter.forceRestyle() }
+        vm.styleTick.observe(viewLifecycleOwner) {
+            applyListPadding(act)
+            adapter.forceRestyle()
+        }
         apply()
+    }
+
+    private fun applyListPadding(act: MainActivity) {
+        if (_b == null) return
+        val style = ThemeHelper.uiStyle(act.prefs.getUiStyleId())
+        val h = (style.listPaddingHDp * resources.displayMetrics.density).toInt()
+        b.recyclerView.setPadding(h, b.recyclerView.paddingTop, h, b.recyclerView.paddingBottom)
+        b.recyclerView.clipToPadding = false
     }
 
     private fun base() = when (category) {
