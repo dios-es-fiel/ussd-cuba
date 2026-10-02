@@ -10,8 +10,8 @@ android {
         applicationId = "cu.ussd.cuba"
         minSdk = 21
         targetSdk = 34
-        versionCode = 17
-        versionName = "5.2"
+        versionCode = 18
+        versionName = "5.3"
     }
     buildTypes {
         release {
