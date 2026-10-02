@@ -28,6 +28,7 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentActivity
 import androidx.viewpager2.adapter.FragmentStateAdapter
 import androidx.viewpager2.widget.ViewPager2
+import com.google.android.material.button.MaterialButton
 import cu.ussd.cuba.databinding.ActivityMainBinding
 
 class MainActivity : AppCompatActivity() {
@@ -41,7 +42,7 @@ class MainActivity : AppCompatActivity() {
         "Inicio", "Consultas", "Planes", "Llamadas", "Más", "Ajustes"
     )
 
-    private val railIds = listOf(
+    private val railButtonIds = listOf(
         R.id.nav_home, R.id.nav_consultas, R.id.nav_planes,
         R.id.nav_llamadas, R.id.nav_mas, R.id.nav_ajustes
     )
@@ -62,26 +63,24 @@ class MainActivity : AppCompatActivity() {
         val start = prefs.getLastTab().coerceIn(0, 5)
         binding.viewPager.setCurrentItem(start, false)
         applyModuleUi(start)
+        selectRail(start)
 
-        binding.navRail.setOnItemSelectedListener { item ->
-            if (updatingNav) return@setOnItemSelectedListener true
-            val index = railIds.indexOf(item.itemId).coerceAtLeast(0)
-            if (binding.viewPager.currentItem != index) {
-                binding.viewPager.setCurrentItem(index, false)
+        railButtonIds.forEachIndexed { index, id ->
+            binding.root.findViewById<MaterialButton>(id)?.setOnClickListener {
+                if (updatingNav) return@setOnClickListener
+                if (binding.viewPager.currentItem != index) {
+                    binding.viewPager.setCurrentItem(index, false)
+                }
+                applyModuleUi(index)
+                selectRail(index)
+                prefs.setLastTab(index)
             }
-            applyModuleUi(index)
-            prefs.setLastTab(index)
-            true
         }
-
-        updatingNav = true
-        binding.navRail.selectedItemId = railIds[start]
-        updatingNav = false
 
         binding.viewPager.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
             override fun onPageSelected(position: Int) {
                 updatingNav = true
-                binding.navRail.selectedItemId = railIds[position]
+                selectRail(position)
                 applyModuleUi(position)
                 prefs.setLastTab(position)
                 updatingNav = false
@@ -106,10 +105,15 @@ class MainActivity : AppCompatActivity() {
         restoreBackgroundFeatures()
     }
 
-    /** Título + búsqueda según módulo (queda claro dónde estás). */
+    private fun selectRail(index: Int) {
+        railButtonIds.forEachIndexed { i, id ->
+            binding.root.findViewById<MaterialButton>(id)?.isSelected = (i == index)
+            binding.root.findViewById<MaterialButton>(id)?.alpha = if (i == index) 1f else 0.55f
+        }
+    }
+
     private fun applyModuleUi(index: Int) {
         binding.toolbar.title = pageTitles[index]
-        // Sin búsqueda en Ajustes
         binding.searchCard.isVisible = index != 5
     }
 
@@ -123,14 +127,10 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    override fun onCreateOptionsMenu(menu: Menu): Boolean {
-        // Ajustes ya está en el rail derecho
-        return false
-    }
+    override fun onCreateOptionsMenu(menu: Menu): Boolean = false
 
-    override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        return super.onOptionsItemSelected(item)
-    }
+    override fun onOptionsItemSelected(item: MenuItem): Boolean =
+        super.onOptionsItemSelected(item)
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
@@ -138,7 +138,12 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun handleDialIntent(intent: Intent?) {
-        val code = intent?.getStringExtra("ussd_code") ?: return
+        if (intent == null) return
+        val code = intent.getStringExtra("ussd_code")
+            ?: intent.getStringExtra(QuickAccessHelper.EXTRA_CODE)
+            ?: return
+        val id = intent.getStringExtra(QuickAccessHelper.EXTRA_ID)
+        if (id != null) prefs.addRecent(id)
         dialRaw(code)
     }
 
