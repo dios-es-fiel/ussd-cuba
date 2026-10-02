@@ -249,7 +249,7 @@ object NautaClient {
     private fun parseAccountPage(html: String): AccountInfo? {
         val timePatterns = listOf(
             Pattern.compile(
-                """(?i)(?:tiempo\s*(?:disponible|restante)|available\s*time)[^0-9]{0,40}([0-9]{1,3}:[0-9]{2}:[0-9]{2})"""
+                """(?i)(?:tiempo\\s*(?:disponible|restante)|available\\s*time)[^0-9]{0,40}([0-9]{1,3}:[0-9]{2}:[0-9]{2})"""
             ),
             Pattern.compile("""(?i)([0-9]{1,3}:[0-9]{2}:[0-9]{2})""")
         )
@@ -299,8 +299,8 @@ object NautaClient {
     private fun extractUuid(text: String): String? {
         val patterns = listOf(
             Pattern.compile("ATTRIBUTE_UUID=([A-Za-z0-9]+)"),
-            Pattern.compile("ATTRIBUTE_UUID\\s*=\\s*\\"([A-Za-z0-9]+)\\""),
-            Pattern.compile("var\\s+urlParam[^\"]*ATTRIBUTE_UUID=([A-Za-z0-9]+)")
+            Pattern.compile("""ATTRIBUTE_UUID\\s*=\\s*\"([A-Za-z0-9]+)\"""),
+            Pattern.compile("""var\\s+urlParam[^\"]*ATTRIBUTE_UUID=([A-Za-z0-9]+)""")
         )
         for (p in patterns) {
             val m = p.matcher(text)
@@ -310,13 +310,13 @@ object NautaClient {
     }
 
     private fun extractAlert(html: String): String? {
-        val m = Pattern.compile("alert\\(\"([^\"]+)\"\\)").matcher(html)
+        val m = Pattern.compile("""alert\\(\"([^\"]+)\"\\)""").matcher(html)
         return if (m.find()) m.group(1) else null
     }
 
     private fun extractHidden(html: String, name: String): String? {
         val p = Pattern.compile(
-            """(?i)<input[^>]*name=["']?$name["']?[^>]*value=["']([^"']*)["']|<input[^>]*value=["']([^"']*)["'][^>]*name=["']?$name["']?"""
+            """(?i)<input[^>]*name=[\"']?$name[\"']?[^>]*value=[\"']([^\"']*)[\"']|<input[^>]*value=[\"']([^\"']*)[\"'][^>]*name=[\"']?$name[\"']?"""
         )
         val m = p.matcher(html)
         return if (m.find()) m.group(1) ?: m.group(2) else null
