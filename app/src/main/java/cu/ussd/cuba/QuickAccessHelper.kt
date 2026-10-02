@@ -23,7 +23,7 @@ object QuickAccessHelper {
             val ch = NotificationChannel(
                 CHANNEL_ID,
                 "Accesos rápidos USSD",
-                NotificationManager.IMPORTANCE_LOW
+                NotificationManager.IMPORTANCE_DEFAULT
             ).apply {
                 description = "Botones de códigos USSD en la barra de notificaciones"
                 setShowBadge(false)
@@ -43,34 +43,50 @@ object QuickAccessHelper {
             listOf("c1", "c2", "p1", "c6")
         }
         val codes = ids.mapNotNull { id -> CodesRepository.allCodes.find { it.id == id } }
+            .filter { !it.code.contains("{") } // solo códigos sin parámetros
             .take(4)
         if (codes.isEmpty()) return
 
         val openApp = PendingIntent.getActivity(
-            ctx, 0, Intent(ctx, MainActivity::class.java),
+            ctx, 0,
+            Intent(ctx, MainActivity::class.java).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+            },
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
         val builder = NotificationCompat.Builder(ctx, CHANNEL_ID)
-            .setContentTitle("USSD Cuba · Accesos rápidos")
-            .setContentText(codes.joinToString(" · ") { shortLabel(it) })
+            .setContentTitle("USSD Cuba")
+            .setContentText("Toca un botón para marcar")
             .setSmallIcon(android.R.drawable.ic_menu_call)
             .setContentIntent(openApp)
             .setOngoing(true)
-            .setPriority(NotificationCompat.PRIORITY_LOW)
+            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(
+                codes.joinToString("  ·  ") { shortLabel(it) }
+            ))
 
         codes.forEachIndexed { i, code ->
-            val intent = Intent(ctx, QuickDialReceiver::class.java).apply {
+            // PendingIntent hacia Activity (más fiable que Broadcast en varios OEM)
+            val dialIntent = Intent(ctx, MainActivity::class.java).apply {
                 action = ACTION_DIAL
                 putExtra(EXTRA_CODE, code.code)
                 putExtra(EXTRA_ID, code.id)
+                putExtra("ussd_code", code.code)
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or
+                    Intent.FLAG_ACTIVITY_SINGLE_TOP
             }
-            val pi = PendingIntent.getBroadcast(
-                ctx, 100 + i, intent,
+            val pi = PendingIntent.getActivity(
+                ctx, 200 + i, dialIntent,
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
             )
-            builder.addAction(0, shortLabel(code), pi)
+            // Solo el nombre corto del código (sin icono vacío)
+            builder.addAction(
+                android.R.drawable.ic_menu_call,
+                shortLabel(code),
+                pi
+            )
         }
 
         (ctx.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager)
@@ -82,19 +98,27 @@ object QuickAccessHelper {
             .cancel(NOTIF_ID)
     }
 
-    private fun shortLabel(c: UssdCode): String = when (c.id) {
+    /** Solo el nombre legible del código (para el botón). */
+    fun shortLabel(c: UssdCode): String = when (c.id) {
         "c1" -> "Saldo"
         "c2" -> "Datos"
         "c3" -> "Bono"
+        "c4" -> "Voz"
+        "c5" -> "SMS"
         "c6" -> "Límite"
+        "c7" -> "Amigos"
         "p1" -> "Planes"
-        "p3" -> "Transfer"
-        "r2" -> "Recarga"
+        "p1d" -> "Datos+"
+        "p2" -> "Transfer"
+        "p5" -> "Adelanta"
+        "r1" -> "Recarga"
         "l1" -> "*99"
-        else -> c.title.take(8)
+        "l8" -> "Buzón"
+        else -> c.title.take(10)
     }
 }
 
+/** Respaldo por si algún OEM usa broadcast. */
 class QuickDialReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         if (intent.action != QuickAccessHelper.ACTION_DIAL) return
@@ -104,7 +128,6 @@ class QuickDialReceiver : BroadcastReceiver() {
             val prefs = PrefsHelper(context)
             if (id != null) prefs.addRecent(id)
             val clean = code.replace(" ", "")
-            // Only dial simple codes without params from notification
             if (clean.contains("{")) return
             val dial = Intent(Intent.ACTION_DIAL).apply {
                 data = Uri.parse("tel:${Uri.encode(clean)}")
