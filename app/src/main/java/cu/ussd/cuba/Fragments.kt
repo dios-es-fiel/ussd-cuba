@@ -218,12 +218,16 @@ class ListFragment : Fragment() {
         }
         b.subtypeScroll.isVisible = true
         subtypes.forEachIndexed { index, st ->
-            val chip = Chip(requireContext(), null, com.google.android.material.R.attr.chipStyleFilter).apply {
+            val chip = Chip(requireContext()).apply {
                 text = st.label
                 isCheckable = true
                 isChecked = index == 0
                 setOnClickListener {
                     subtypeId = st.id
+                    // marcar solo este chip
+                    for (i in 0 until group.childCount) {
+                        (group.getChildAt(i) as? Chip)?.isChecked = group.getChildAt(i) === this
+                    }
                     apply()
                 }
             }
