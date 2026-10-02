@@ -74,7 +74,6 @@ class PrefsHelper(context: Context) {
     fun getPaletteId() = prefs.getString("palette_id", "cuba") ?: "cuba"
     fun setPaletteId(id: String) = prefs.edit().putString("palette_id", id).apply()
 
-    /** Estilo de interfaz: clasico | minimalista | profesional | compacto | comodo | tarjetas */
     @Volatile private var uiStyleCache: String? = null
 
     fun getUiStyleId(): String {
@@ -86,7 +85,6 @@ class PrefsHelper(context: Context) {
 
     fun setUiStyleId(id: String) {
         uiStyleCache = id
-        // commit() para que forceRestyle lea el valor nuevo de inmediato
         prefs.edit().putString("ui_style", id).commit()
     }
 
@@ -253,4 +251,10 @@ class PrefsHelper(context: Context) {
 
     fun getNautaSyncIntervalSec() = prefs.getInt("nauta_sync_sec", 30).coerceIn(15, 120)
     fun setNautaSyncIntervalSec(s: Int) = prefs.edit().putInt("nauta_sync_sec", s.coerceIn(15, 120)).apply()
+
+    fun getNautaCsrf() = prefs.getString("nauta_csrf", "") ?: ""
+    fun setNautaCsrf(v: String) = prefs.edit().putString("nauta_csrf", v).apply()
+
+    fun getNautaWlanIp() = prefs.getString("nauta_wlan_ip", "") ?: ""
+    fun setNautaWlanIp(v: String) = prefs.edit().putString("nauta_wlan_ip", v).apply()
 }
