@@ -37,7 +37,14 @@ class MainActivity : AppCompatActivity() {
     private val viewModel: AppViewModel by viewModels()
     private var updatingNav = false
 
-    private val pageTitles = listOf("Inicio", "Consultas", "Planes", "Llamadas", "Más", "Ajustes")
+    private val pageTitles = listOf(
+        "Inicio", "Consultas", "Planes", "Llamadas", "Más", "Ajustes"
+    )
+
+    private val railIds = listOf(
+        R.id.nav_home, R.id.nav_consultas, R.id.nav_planes,
+        R.id.nav_llamadas, R.id.nav_mas, R.id.nav_ajustes
+    )
 
     override fun onCreate(savedInstanceState: Bundle?) {
         prefs = PrefsHelper(this)
@@ -54,47 +61,29 @@ class MainActivity : AppCompatActivity() {
 
         val start = prefs.getLastTab().coerceIn(0, 5)
         binding.viewPager.setCurrentItem(start, false)
-        binding.toolbar.title = pageTitles[start]
+        applyModuleUi(start)
 
-        binding.bottomNav.setOnItemSelectedListener { item ->
+        binding.navRail.setOnItemSelectedListener { item ->
             if (updatingNav) return@setOnItemSelectedListener true
-            val index = when (item.itemId) {
-                R.id.nav_home -> 0
-                R.id.nav_consultas -> 1
-                R.id.nav_planes -> 2
-                R.id.nav_llamadas -> 3
-                R.id.nav_mas -> 4
-                else -> 0
-            }
+            val index = railIds.indexOf(item.itemId).coerceAtLeast(0)
             if (binding.viewPager.currentItem != index) {
                 binding.viewPager.setCurrentItem(index, false)
             }
-            binding.toolbar.title = pageTitles[index]
+            applyModuleUi(index)
             prefs.setLastTab(index)
-            binding.searchCard.isVisible = true
             true
         }
 
-        val ids = listOf(
-            R.id.nav_home, R.id.nav_consultas, R.id.nav_planes,
-            R.id.nav_llamadas, R.id.nav_mas
-        )
         updatingNav = true
-        if (start <= 4) {
-            binding.bottomNav.selectedItemId = ids[start]
-        }
+        binding.navRail.selectedItemId = railIds[start]
         updatingNav = false
-        binding.searchCard.isVisible = start != 5
 
         binding.viewPager.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
             override fun onPageSelected(position: Int) {
                 updatingNav = true
-                if (position <= 4) {
-                    binding.bottomNav.selectedItemId = ids[position]
-                }
-                binding.toolbar.title = pageTitles[position]
+                binding.navRail.selectedItemId = railIds[position]
+                applyModuleUi(position)
                 prefs.setLastTab(position)
-                binding.searchCard.isVisible = position != 5
                 updatingNav = false
             }
         })
@@ -117,6 +106,13 @@ class MainActivity : AppCompatActivity() {
         restoreBackgroundFeatures()
     }
 
+    /** Título + búsqueda según módulo (queda claro dónde estás). */
+    private fun applyModuleUi(index: Int) {
+        binding.toolbar.title = pageTitles[index]
+        // Sin búsqueda en Ajustes
+        binding.searchCard.isVisible = index != 5
+    }
+
     private fun restoreBackgroundFeatures() {
         if (prefs.getShowNotifShortcuts()) {
             QuickAccessHelper.show(this, prefs)
@@ -128,18 +124,11 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
-        menuInflater.inflate(R.menu.main_menu, menu)
-        return true
+        // Ajustes ya está en el rail derecho
+        return false
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        if (item.itemId == R.id.action_settings) {
-            binding.viewPager.setCurrentItem(5, false)
-            binding.toolbar.title = pageTitles[5]
-            prefs.setLastTab(5)
-            binding.searchCard.isVisible = false
-            return true
-        }
         return super.onOptionsItemSelected(item)
     }
 

@@ -12,17 +12,18 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.material.card.MaterialCardView
+import com.google.android.material.chip.Chip
 import cu.ussd.cuba.databinding.FragmentHomeBinding
 import cu.ussd.cuba.databinding.FragmentListBinding
 
 class HomeFragment : Fragment() {
     private var _b: FragmentHomeBinding? = null
     private val b get() = _b!!
-    private lateinit var favAdapter: UssdAdapter
-    private lateinit var recentAdapter: UssdAdapter
-    private lateinit var mostAdapter: UssdAdapter
+    private lateinit var listAdapter: UssdAdapter
     private val vm: AppViewModel by activityViewModels()
     private var query = ""
+    /** 0=Favoritos 1=Más usados 2=Recientes */
+    private var homeType = 0
 
     override fun onCreateView(i: LayoutInflater, c: ViewGroup?, s: Bundle?): View {
         _b = FragmentHomeBinding.inflate(i, c, false)
@@ -31,28 +32,26 @@ class HomeFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         val act = requireActivity() as MainActivity
-        favAdapter = ad(act); recentAdapter = ad(act); mostAdapter = ad(act)
-        b.rvFavorites.layoutManager = LinearLayoutManager(requireContext())
-        b.rvRecents.layoutManager = LinearLayoutManager(requireContext())
-        b.rvMostUsed.layoutManager = LinearLayoutManager(requireContext())
-        b.rvFavorites.adapter = favAdapter
-        b.rvRecents.adapter = recentAdapter
-        b.rvMostUsed.adapter = mostAdapter
-        b.rvFavorites.itemAnimator = null
-        b.rvRecents.itemAnimator = null
-        b.rvMostUsed.itemAnimator = null
+        listAdapter = ad(act)
+        b.rvHomeList.layoutManager = LinearLayoutManager(requireContext())
+        b.rvHomeList.adapter = listAdapter
+        b.rvHomeList.itemAnimator = null
         applyListPadding(act)
+
         b.btnEmergency.setOnClickListener { act.showEmergencyPanel() }
         b.tvSeeAllFav.setOnClickListener { act.showAllFavorites() }
+
+        b.chipFav.setOnClickListener { homeType = 0; refresh() }
+        b.chipUsed.setOnClickListener { homeType = 1; refresh() }
+        b.chipRecent.setOnClickListener { homeType = 2; refresh() }
+
         setupShortcuts()
         vm.query.observe(viewLifecycleOwner) { query = it; refresh() }
         vm.tick.observe(viewLifecycleOwner) { refresh() }
         vm.styleTick.observe(viewLifecycleOwner) {
             applyListPadding(act)
             setupShortcuts()
-            favAdapter.forceRestyle()
-            recentAdapter.forceRestyle()
-            mostAdapter.forceRestyle()
+            listAdapter.forceRestyle()
         }
         refresh()
     }
@@ -67,12 +66,8 @@ class HomeFragment : Fragment() {
         if (_b == null) return
         val style = ThemeHelper.uiStyle(act.prefs.getUiStyleId())
         val h = (style.listPaddingHDp * resources.displayMetrics.density).toInt()
-        b.rvFavorites.setPadding(h, b.rvFavorites.paddingTop, h, b.rvFavorites.paddingBottom)
-        b.rvRecents.setPadding(h, b.rvRecents.paddingTop, h, b.rvRecents.paddingBottom)
-        b.rvMostUsed.setPadding(h, b.rvMostUsed.paddingTop, h, b.rvMostUsed.paddingBottom)
-        b.rvFavorites.clipToPadding = false
-        b.rvRecents.clipToPadding = false
-        b.rvMostUsed.clipToPadding = false
+        b.rvHomeList.setPadding(h, b.rvHomeList.paddingTop, h, b.rvHomeList.paddingBottom)
+        b.rvHomeList.clipToPadding = false
     }
 
     private fun setupShortcuts() {
@@ -96,7 +91,7 @@ class HomeFragment : Fragment() {
                 height = ViewGroup.LayoutParams.WRAP_CONTENT
                 columnSpec = GridLayout.spec(i % 2, 1f)
                 rowSpec = GridLayout.spec(i / 2)
-                val m = (6 * density).toInt()
+                val m = (4 * density).toInt()
                 setMargins(m, m, m, m)
             }
             item.findViewById<TextView>(R.id.tvIcon).text = icons.getOrElse(i) { "☆" }
@@ -124,25 +119,44 @@ class HomeFragment : Fragment() {
     fun refresh() {
         if (_b == null) return
         val act = requireActivity() as MainActivity
-        val favs = act.prefs.getFavorites()
-        var favList = CodesRepository.allCodes.filter { it.id in favs }
-        if (query.isNotEmpty()) favList = favList.filter { CodesRepository.matchesQuery(it, query) }
-        favAdapter.submitList(favList.take(6))
-        b.tvFavEmpty.isVisible = favList.isEmpty()
-        b.tvSeeAllFav.isVisible = favList.size > 6 || favs.size > 6
 
-        var most = act.prefs.getMostUsed(6)
-            .mapNotNull { id -> CodesRepository.allCodes.find { it.id == id } }
-        if (query.isNotEmpty()) most = most.filter { CodesRepository.matchesQuery(it, query) }
-        mostAdapter.submitList(most)
-        b.tvMostEmpty.isVisible = most.isEmpty()
+        b.chipFav.isChecked = homeType == 0
+        b.chipUsed.isChecked = homeType == 1
+        b.chipRecent.isChecked = homeType == 2
 
-        var rec = act.prefs.getRecents()
-            .mapNotNull { id -> CodesRepository.allCodes.find { it.id == id } }.take(5)
-        if (query.isNotEmpty()) rec = rec.filter { CodesRepository.matchesQuery(it, query) }
-        recentAdapter.submitList(rec)
-        b.tvRecentsEmpty.isVisible = rec.isEmpty()
-        b.rvRecents.isVisible = rec.isNotEmpty()
+        val list: List<UssdCode>
+        when (homeType) {
+            1 -> {
+                b.tvSectionTitle.text = "Más usados"
+                b.tvSeeAllFav.isVisible = false
+                var most = act.prefs.getMostUsed(8)
+                    .mapNotNull { id -> CodesRepository.allCodes.find { it.id == id } }
+                if (query.isNotEmpty()) most = most.filter { CodesRepository.matchesQuery(it, query) }
+                list = most
+                b.tvListEmpty.text = "Se llenará al marcar códigos"
+            }
+            2 -> {
+                b.tvSectionTitle.text = "Recientes"
+                b.tvSeeAllFav.isVisible = false
+                var rec = act.prefs.getRecents()
+                    .mapNotNull { id -> CodesRepository.allCodes.find { it.id == id } }.take(8)
+                if (query.isNotEmpty()) rec = rec.filter { CodesRepository.matchesQuery(it, query) }
+                list = rec
+                b.tvListEmpty.text = "Aún no has marcado códigos"
+            }
+            else -> {
+                b.tvSectionTitle.text = "Favoritos"
+                val favs = act.prefs.getFavorites()
+                var favList = CodesRepository.allCodes.filter { it.id in favs }
+                if (query.isNotEmpty()) favList = favList.filter { CodesRepository.matchesQuery(it, query) }
+                list = favList.take(8)
+                b.tvSeeAllFav.isVisible = favList.size > 8 || favs.size > 8
+                b.tvListEmpty.text = "Marca con ★ cualquier código"
+            }
+        }
+
+        listAdapter.submitList(list)
+        b.tvListEmpty.isVisible = list.isEmpty()
     }
 
     override fun onDestroyView() { super.onDestroyView(); _b = null }
@@ -152,23 +166,25 @@ class ListFragment : Fragment() {
     private var _b: FragmentListBinding? = null
     private val b get() = _b!!
     private lateinit var adapter: UssdAdapter
-    private var category = "Consultas"
+    private var module = "Consultas"
+    private var subtypeId = "todo"
     private val vm: AppViewModel by activityViewModels()
     private var query = ""
 
     companion object {
-        fun newInstance(cat: String) = ListFragment().apply {
-            arguments = Bundle().apply { putString("category", cat) }
+        fun newInstance(mod: String) = ListFragment().apply {
+            arguments = Bundle().apply { putString("module", mod) }
         }
     }
 
     override fun onCreate(s: Bundle?) {
         super.onCreate(s)
-        category = arguments?.getString("category") ?: "Consultas"
+        module = arguments?.getString("module") ?: "Consultas"
     }
 
     override fun onCreateView(i: LayoutInflater, c: ViewGroup?, s: Bundle?): View {
-        _b = FragmentListBinding.inflate(i, c, false); return b.root
+        _b = FragmentListBinding.inflate(i, c, false)
+        return b.root
     }
 
     override fun onViewCreated(view: View, s: Bundle?) {
@@ -182,6 +198,7 @@ class ListFragment : Fragment() {
         b.recyclerView.adapter = adapter
         b.recyclerView.itemAnimator = null
         applyListPadding(act)
+        setupSubtypeChips()
         vm.query.observe(viewLifecycleOwner) { query = it; apply() }
         vm.tick.observe(viewLifecycleOwner) { apply() }
         vm.styleTick.observe(viewLifecycleOwner) {
@@ -189,6 +206,30 @@ class ListFragment : Fragment() {
             adapter.forceRestyle()
         }
         apply()
+    }
+
+    private fun setupSubtypeChips() {
+        val group = b.chipGroupSubtypes
+        group.removeAllViews()
+        val subtypes = ModuleStructure.subtypesFor(module)
+        if (subtypes.isEmpty()) {
+            b.subtypeScroll.isVisible = false
+            return
+        }
+        b.subtypeScroll.isVisible = true
+        subtypes.forEachIndexed { index, st ->
+            val chip = Chip(requireContext(), null, com.google.android.material.R.attr.chipStyleFilter).apply {
+                text = st.label
+                isCheckable = true
+                isChecked = index == 0
+                setOnClickListener {
+                    subtypeId = st.id
+                    apply()
+                }
+            }
+            group.addView(chip)
+        }
+        subtypeId = subtypes.first().id
     }
 
     private fun applyListPadding(act: MainActivity) {
@@ -199,20 +240,24 @@ class ListFragment : Fragment() {
         b.recyclerView.clipToPadding = false
     }
 
-    private fun base() = when (category) {
-        "Consultas" -> CodesRepository.allCodes.filter { it.category == "Consultas" }
-        "Planes" -> CodesRepository.allCodes.filter { it.category in listOf("Planes", "Recargas") }
-        "Llamadas" -> CodesRepository.allCodes.filter { it.category in listOf("Llamadas", "Internacional") }
-        else -> CodesRepository.allCodes
-    }
-
     private fun apply() {
         if (_b == null) return
-        val list = base().filter { CodesRepository.matchesQuery(it, query) }
+        val subtypes = ModuleStructure.subtypesFor(module)
+        val filter = subtypes.find { it.id == subtypeId }?.filter
+            ?: { c: UssdCode -> c.category == module }
+
+        val list = CodesRepository.allCodes
+            .filter(filter)
+            .filter { CodesRepository.matchesQuery(it, query) }
+
         adapter.submitList(list)
         b.emptyState.isVisible = list.isEmpty()
         b.recyclerView.isVisible = list.isNotEmpty()
-        b.tvEmpty.text = if (query.isNotEmpty()) "Sin resultados" else "Sin códigos"
+        b.tvEmpty.text = if (query.isNotEmpty()) "Sin resultados" else "Sin códigos en este tipo"
+
+        val label = subtypes.find { it.id == subtypeId }?.label ?: module
+        b.tvModuleHint.text = "$module  ·  $label  (${list.size})"
+        b.tvModuleHint.isVisible = true
     }
 
     override fun onDestroyView() { super.onDestroyView(); _b = null }
