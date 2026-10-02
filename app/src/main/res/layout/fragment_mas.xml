@@ -12,14 +12,16 @@
         android:layout_height="wrap_content"
         android:scrollbars="none"
         android:paddingHorizontal="12dp"
-        android:paddingVertical="4dp"
+        android:paddingTop="6dp"
+        android:paddingBottom="8dp"
         android:clipToPadding="false">
 
         <com.google.android.material.chip.ChipGroup
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             app:singleSelection="true"
-            app:selectionRequired="true">
+            app:selectionRequired="true"
+            app:chipSpacingHorizontal="8dp">
 
             <com.google.android.material.chip.Chip
                 android:id="@+id/chipTm"
@@ -27,35 +29,40 @@
                 android:layout_height="wrap_content"
                 android:text="Transfermóvil"
                 android:checkable="true"
-                android:checked="true" />
+                android:checked="true"
+                style="@style/Widget.Material3.Chip.Filter" />
 
             <com.google.android.material.chip.Chip
                 android:id="@+id/chipAtencion"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Atención"
-                android:checkable="true" />
+                android:checkable="true"
+                style="@style/Widget.Material3.Chip.Filter" />
 
             <com.google.android.material.chip.Chip
                 android:id="@+id/chipEmergencias"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Emergencias"
-                android:checkable="true" />
+                android:checkable="true"
+                style="@style/Widget.Material3.Chip.Filter" />
 
             <com.google.android.material.chip.Chip
                 android:id="@+id/chipDispositivo"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Dispositivo"
-                android:checkable="true" />
+                android:checkable="true"
+                style="@style/Widget.Material3.Chip.Filter" />
 
             <com.google.android.material.chip.Chip
                 android:id="@+id/chipWifi"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="WiFi ETECSA"
-                android:checkable="true" />
+                android:checkable="true"
+                style="@style/Widget.Material3.Chip.Filter" />
 
         </com.google.android.material.chip.ChipGroup>
 
@@ -70,8 +77,8 @@
             android:id="@+id/recyclerView"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:paddingHorizontal="12dp"
-            android:paddingBottom="8dp"
+            android:paddingHorizontal="14dp"
+            android:paddingBottom="12dp"
             android:clipToPadding="false" />
 
         <LinearLayout
@@ -86,11 +93,12 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Sin resultados"
+                android:textSize="15sp"
                 android:textColor="?attr/colorOnSurfaceVariant" />
 
         </LinearLayout>
 
-        <!-- WiFi ETECSA module -->
+        <!-- Panel WiFi ETECSA -->
         <androidx.core.widget.NestedScrollView
             android:id="@+id/wifiPanel"
             android:layout_width="match_parent"
@@ -106,28 +114,37 @@
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Módulo WiFi ETECSA / Nauta"
+                    android:text="WiFi ETECSA / Nauta"
                     android:textStyle="bold"
-                    android:textSize="16sp"
+                    android:textSize="17sp"
                     android:textColor="?attr/colorPrimary"
-                    android:layout_marginBottom="8dp" />
+                    android:layout_marginBottom="12dp" />
 
-                <TextView
-                    android:id="@+id/tvWifiStatus"
+                <com.google.android.material.card.MaterialCardView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Estado Wi‑Fi…"
-                    android:textSize="14sp"
-                    android:padding="12dp"
-                    android:background="?attr/colorSurfaceVariant"
-                    android:layout_marginBottom="16dp" />
+                    app:cardCornerRadius="14dp"
+                    app:cardElevation="0dp"
+                    app:cardBackgroundColor="?attr/colorSurfaceContainer"
+                    android:layout_marginBottom="16dp">
+
+                    <TextView
+                        android:id="@+id/tvWifiStatus"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Estado Wi‑Fi…"
+                        android:textSize="14sp"
+                        android:padding="16dp"
+                        android:textColor="?attr/colorOnSurface" />
+                </com.google.android.material.card.MaterialCardView>
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btnOpenPortal"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="Abrir portal login (secure.etecsa.net)"
-                    android:layout_marginBottom="6dp" />
+                    android:layout_marginBottom="6dp"
+                    app:cornerRadius="12dp" />
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btnOpenPortalAlt"
@@ -135,7 +152,8 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="Portal alternativo (1.1.1.1)"
-                    android:layout_marginBottom="6dp" />
+                    android:layout_marginBottom="6dp"
+                    app:cornerRadius="12dp" />
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btnNautaPortal"
@@ -143,7 +161,8 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="Portal usuario nauta (www.nauta.cu)"
-                    android:layout_marginBottom="6dp" />
+                    android:layout_marginBottom="6dp"
+                    app:cornerRadius="12dp" />
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btnWifiSettings"
@@ -151,14 +170,16 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="Ajustes Wi‑Fi del sistema"
-                    android:layout_marginBottom="16dp" />
+                    android:layout_marginBottom="20dp"
+                    app:cornerRadius="12dp" />
 
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Sesión"
+                    android:text="SESIÓN"
                     android:textStyle="bold"
-                    android:textSize="13sp"
+                    android:textSize="11sp"
+                    android:letterSpacing="0.08"
                     android:textColor="?attr/colorPrimary"
                     android:layout_marginBottom="8dp" />
 
@@ -168,13 +189,14 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="Iniciar contador de tiempo flotante"
-                    android:layout_marginBottom="8dp" />
+                    android:layout_marginBottom="12dp"
+                    app:cornerRadius="12dp" />
 
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="1. Conéctate a WIFI_ETECSA\n2. Abre el portal e inicia sesión Nauta\n3. Inicia el contador con el tiempo de tu cuenta\n4. Activa el monitor de velocidad en Ajustes ⚙"
-                    android:textSize="12sp"
+                    android:textSize="13sp"
                     android:textColor="?attr/colorOnSurfaceVariant"
                     android:lineSpacingExtra="4dp" />
 

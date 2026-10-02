@@ -5,8 +5,8 @@
     android:layout_width="0dp"
     android:layout_height="wrap_content"
     android:layout_columnWeight="1"
-    android:layout_margin="4dp"
-    app:cardCornerRadius="16dp"
+    android:layout_margin="6dp"
+    app:cardCornerRadius="20dp"
     app:cardElevation="0dp"
     app:cardBackgroundColor="?attr/colorPrimaryContainer"
     android:clickable="true"
@@ -17,23 +17,26 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="16dp"
+        android:paddingHorizontal="14dp"
+        android:paddingTop="18dp"
+        android:paddingBottom="16dp"
         android:gravity="center_horizontal">
 
         <TextView
             android:id="@+id/tvIcon"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:textSize="28sp"
+            android:textSize="30sp"
             android:text="📱" />
 
         <TextView
             android:id="@+id/tvLabel"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="6dp"
-            android:textSize="13sp"
+            android:layout_marginTop="8dp"
+            android:textSize="14sp"
             android:textStyle="bold"
+            android:letterSpacing="0.01"
             android:textColor="?attr/colorOnPrimaryContainer"
             android:text="Saldo" />
 
@@ -41,11 +44,11 @@
             android:id="@+id/tvCodeHint"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="2dp"
+            android:layout_marginTop="3dp"
             android:textSize="11sp"
             android:fontFamily="monospace"
             android:textColor="?attr/colorOnPrimaryContainer"
-            android:alpha="0.7"
+            android:alpha="0.75"
             android:text="*222#" />
 
     </LinearLayout>

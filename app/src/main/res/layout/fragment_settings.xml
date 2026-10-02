@@ -1,165 +1,295 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.core.widget.NestedScrollView
     xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="?attr/colorSurface"
-    android:padding="16dp">
+    android:padding="16dp"
+    android:clipToPadding="false">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:paddingBottom="24dp">
+        android:paddingBottom="32dp">
 
-        <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:text="Apariencia" android:textStyle="bold" android:textSize="13sp"
-            android:textColor="?attr/colorPrimary" android:layout_marginBottom="8dp" />
-
-        <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:text="Tema (claro / oscuro)" android:textSize="12sp" android:textColor="?attr/colorOnSurfaceVariant" />
-        <Spinner android:id="@+id/spinnerTheme" android:layout_width="match_parent"
-            android:layout_height="48dp" android:layout_marginBottom="12dp" />
-
-        <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:text="Paleta de color" android:textSize="12sp" android:textColor="?attr/colorOnSurfaceVariant" />
-        <Spinner android:id="@+id/spinnerPalette" android:layout_width="match_parent"
-            android:layout_height="48dp" android:layout_marginBottom="12dp" />
-
-        <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:text="Estilo de interfaz" android:textSize="12sp" android:textColor="?attr/colorOnSurfaceVariant" />
-        <Spinner android:id="@+id/spinnerUiStyle" android:layout_width="match_parent"
-            android:layout_height="48dp" android:layout_marginBottom="4dp" />
-        <TextView android:id="@+id/tvUiStyleDesc" android:layout_width="match_parent"
+        <!-- APARIENCIA -->
+        <TextView
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:textSize="11sp" android:textColor="?attr/colorOnSurfaceVariant"
-            android:layout_marginBottom="16dp" />
-
-        <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:text="Comportamiento" android:textStyle="bold" android:textSize="13sp"
-            android:textColor="?attr/colorPrimary" android:layout_marginBottom="8dp" />
-
-        <androidx.appcompat.widget.SwitchCompat
-            android:id="@+id/switchConfirm" android:layout_width="match_parent"
-            android:layout_height="wrap_content" android:text="Confirmar antes de marcar"
-            android:paddingVertical="8dp" />
-
-        <androidx.appcompat.widget.SwitchCompat
-            android:id="@+id/switchCopy" android:layout_width="match_parent"
-            android:layout_height="wrap_content" android:text="Solo copiar (no abrir marcador)"
-            android:paddingVertical="8dp" />
-
-        <androidx.appcompat.widget.SwitchCompat
-            android:id="@+id/switchCall" android:layout_width="match_parent"
-            android:layout_height="wrap_content" android:text="Usar llamada directa (CALL) si hay permiso"
-            android:paddingVertical="8dp" />
-
-        <androidx.appcompat.widget.SwitchCompat
-            android:id="@+id/switchSwipe" android:layout_width="match_parent"
-            android:layout_height="wrap_content" android:text="Desactivar deslizamiento entre pestañas"
-            android:paddingVertical="8dp" android:layout_marginBottom="16dp" />
-
-        <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:text="Barra de notificaciones" android:textStyle="bold" android:textSize="13sp"
-            android:textColor="?attr/colorPrimary" android:layout_marginBottom="8dp" />
-
-        <androidx.appcompat.widget.SwitchCompat
-            android:id="@+id/switchNotifShortcuts" android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Mostrar accesos rápidos (3–4 códigos)"
-            android:paddingVertical="8dp" />
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnNotifCodes" style="@style/Widget.Material3.Button.TonalButton"
-            android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:text="Elegir códigos de la notificación"
-            android:layout_marginBottom="16dp" />
-
-        <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:text="Cuenta Nauta / WiFi" android:textStyle="bold" android:textSize="13sp"
-            android:textColor="?attr/colorPrimary" android:layout_marginBottom="8dp" />
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnNautaAccount" style="@style/Widget.Material3.Button.TonalButton"
-            android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:text="Guardar usuario y contraseña Nauta"
-            android:layout_marginBottom="6dp" />
-
-        <androidx.appcompat.widget.SwitchCompat
-            android:id="@+id/switchNautaReal" android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Tiempo real de la cuenta Nauta (portal ETECSA)"
-            android:paddingVertical="8dp" />
-
-        <androidx.appcompat.widget.SwitchCompat
-            android:id="@+id/switchFloatTime" android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Mostrar tiempo restante flotante"
-            android:paddingVertical="8dp" />
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnSyncNauta" style="@style/Widget.Material3.Button.TonalButton"
-            android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:text="Sincronizar tiempo Nauta ahora"
-            android:layout_marginBottom="6dp" />
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnSetSessionTime" style="@style/Widget.Material3.Button.OutlinedButton"
-            android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:text="Contador manual (si no hay cuenta Nauta)"
+            android:text="APARIENCIA"
+            android:textStyle="bold"
+            android:textSize="11sp"
+            android:letterSpacing="0.08"
+            android:textColor="?attr/colorPrimary"
             android:layout_marginBottom="8dp" />
 
-        <androidx.appcompat.widget.SwitchCompat
-            android:id="@+id/switchSpeed" android:layout_width="match_parent"
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Monitor de velocidad en tiempo real"
-            android:paddingVertical="8dp" />
+            app:cardCornerRadius="16dp"
+            app:cardElevation="0dp"
+            app:cardBackgroundColor="?attr/colorSurfaceContainer"
+            android:layout_marginBottom="20dp">
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnSpeedConfig" style="@style/Widget.Material3.Button.TonalButton"
-            android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:text="Configurar monitor de velocidad"
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:text="Tema (claro / oscuro)" android:textSize="12sp"
+                    android:textColor="?attr/colorOnSurfaceVariant" />
+                <Spinner android:id="@+id/spinnerTheme" android:layout_width="match_parent"
+                    android:layout_height="48dp" android:layout_marginBottom="12dp" />
+
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:text="Paleta de color" android:textSize="12sp"
+                    android:textColor="?attr/colorOnSurfaceVariant" />
+                <Spinner android:id="@+id/spinnerPalette" android:layout_width="match_parent"
+                    android:layout_height="48dp" android:layout_marginBottom="12dp" />
+
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:text="Estilo de interfaz" android:textSize="12sp"
+                    android:textColor="?attr/colorOnSurfaceVariant" />
+                <Spinner android:id="@+id/spinnerUiStyle" android:layout_width="match_parent"
+                    android:layout_height="48dp" android:layout_marginBottom="4dp" />
+                <TextView android:id="@+id/tvUiStyleDesc" android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textSize="11sp" android:textColor="?attr/colorOnSurfaceVariant" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- COMPORTAMIENTO -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="COMPORTAMIENTO"
+            android:textStyle="bold"
+            android:textSize="11sp"
+            android:letterSpacing="0.08"
+            android:textColor="?attr/colorPrimary"
             android:layout_marginBottom="8dp" />
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnOverlayPerm" style="@style/Widget.Material3.Button.OutlinedButton"
-            android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:text="Permitir ventanas flotantes"
-            android:layout_marginBottom="16dp" />
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="0dp"
+            app:cardBackgroundColor="?attr/colorSurfaceContainer"
+            android:layout_marginBottom="20dp">
 
-        <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:text="Datos" android:textStyle="bold" android:textSize="13sp"
-            android:textColor="?attr/colorPrimary" android:layout_marginBottom="8dp" />
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingHorizontal="16dp"
+                android:paddingVertical="8dp">
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnPin" style="@style/Widget.Material3.Button.TonalButton"
-            android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:text="PIN de transferencia" android:layout_marginBottom="6dp" />
+                <androidx.appcompat.widget.SwitchCompat
+                    android:id="@+id/switchConfirm" android:layout_width="match_parent"
+                    android:layout_height="wrap_content" android:text="Confirmar antes de marcar"
+                    android:paddingVertical="10dp" />
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnContacts" style="@style/Widget.Material3.Button.TonalButton"
-            android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:text="Contactos frecuentes" android:layout_marginBottom="6dp" />
+                <androidx.appcompat.widget.SwitchCompat
+                    android:id="@+id/switchCopy" android:layout_width="match_parent"
+                    android:layout_height="wrap_content" android:text="Solo copiar (no abrir marcador)"
+                    android:paddingVertical="10dp" />
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnTemplates" style="@style/Widget.Material3.Button.TonalButton"
-            android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:text="Plantillas de transferencia" android:layout_marginBottom="6dp" />
+                <androidx.appcompat.widget.SwitchCompat
+                    android:id="@+id/switchCall" android:layout_width="match_parent"
+                    android:layout_height="wrap_content" android:text="Usar llamada directa (CALL) si hay permiso"
+                    android:paddingVertical="10dp" />
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnExport" style="@style/Widget.Material3.Button.TonalButton"
-            android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:text="Exportar favoritos" android:layout_marginBottom="6dp" />
+                <androidx.appcompat.widget.SwitchCompat
+                    android:id="@+id/switchSwipe" android:layout_width="match_parent"
+                    android:layout_height="wrap_content" android:text="Desactivar deslizamiento entre pestañas"
+                    android:paddingVertical="10dp" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnImport" style="@style/Widget.Material3.Button.TonalButton"
-            android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:text="Importar favoritos (pegar JSON)" android:layout_marginBottom="6dp" />
+        <!-- NOTIFICACIONES -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="NOTIFICACIONES"
+            android:textStyle="bold"
+            android:textSize="11sp"
+            android:letterSpacing="0.08"
+            android:textColor="?attr/colorPrimary"
+            android:layout_marginBottom="8dp" />
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnChecklist" style="@style/Widget.Material3.Button.OutlinedButton"
-            android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:text="Checklist post-recarga" android:layout_marginTop="8dp" />
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="0dp"
+            app:cardBackgroundColor="?attr/colorSurfaceContainer"
+            android:layout_marginBottom="20dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <androidx.appcompat.widget.SwitchCompat
+                    android:id="@+id/switchNotifShortcuts" android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Mostrar accesos rápidos (3–4 códigos)"
+                    android:paddingVertical="8dp" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnNotifCodes" style="@style/Widget.Material3.Button.TonalButton"
+                    android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:text="Elegir códigos de la notificación"
+                    app:cornerRadius="12dp" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- NAUTA / WIFI -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="CUENTA NAUTA / WIFI"
+            android:textStyle="bold"
+            android:textSize="11sp"
+            android:letterSpacing="0.08"
+            android:textColor="?attr/colorPrimary"
+            android:layout_marginBottom="8dp" />
+
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="0dp"
+            app:cardBackgroundColor="?attr/colorSurfaceContainer"
+            android:layout_marginBottom="20dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnNautaAccount" style="@style/Widget.Material3.Button.TonalButton"
+                    android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:text="Guardar usuario y contraseña Nauta"
+                    android:layout_marginBottom="6dp"
+                    app:cornerRadius="12dp" />
+
+                <androidx.appcompat.widget.SwitchCompat
+                    android:id="@+id/switchNautaReal" android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Tiempo real de la cuenta Nauta (portal ETECSA)"
+                    android:paddingVertical="8dp" />
+
+                <androidx.appcompat.widget.SwitchCompat
+                    android:id="@+id/switchFloatTime" android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Mostrar tiempo restante flotante"
+                    android:paddingVertical="8dp" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnSyncNauta" style="@style/Widget.Material3.Button.TonalButton"
+                    android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:text="Sincronizar tiempo Nauta ahora"
+                    android:layout_marginBottom="6dp"
+                    app:cornerRadius="12dp" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnSetSessionTime" style="@style/Widget.Material3.Button.OutlinedButton"
+                    android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:text="Contador manual (si no hay cuenta Nauta)"
+                    android:layout_marginBottom="8dp"
+                    app:cornerRadius="12dp" />
+
+                <androidx.appcompat.widget.SwitchCompat
+                    android:id="@+id/switchSpeed" android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Monitor de velocidad en tiempo real"
+                    android:paddingVertical="8dp" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnSpeedConfig" style="@style/Widget.Material3.Button.TonalButton"
+                    android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:text="Configurar monitor de velocidad"
+                    android:layout_marginBottom="6dp"
+                    app:cornerRadius="12dp" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnOverlayPerm" style="@style/Widget.Material3.Button.OutlinedButton"
+                    android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:text="Permitir ventanas flotantes"
+                    app:cornerRadius="12dp" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- DATOS -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="DATOS"
+            android:textStyle="bold"
+            android:textSize="11sp"
+            android:letterSpacing="0.08"
+            android:textColor="?attr/colorPrimary"
+            android:layout_marginBottom="8dp" />
+
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="0dp"
+            app:cardBackgroundColor="?attr/colorSurfaceContainer"
+            android:layout_marginBottom="8dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnPin" style="@style/Widget.Material3.Button.TonalButton"
+                    android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:text="PIN de transferencia" android:layout_marginBottom="6dp"
+                    app:cornerRadius="12dp" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnContacts" style="@style/Widget.Material3.Button.TonalButton"
+                    android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:text="Contactos frecuentes" android:layout_marginBottom="6dp"
+                    app:cornerRadius="12dp" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnTemplates" style="@style/Widget.Material3.Button.TonalButton"
+                    android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:text="Plantillas de transferencia" android:layout_marginBottom="6dp"
+                    app:cornerRadius="12dp" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnExport" style="@style/Widget.Material3.Button.TonalButton"
+                    android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:text="Exportar favoritos" android:layout_marginBottom="6dp"
+                    app:cornerRadius="12dp" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnImport" style="@style/Widget.Material3.Button.TonalButton"
+                    android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:text="Importar favoritos (pegar JSON)" android:layout_marginBottom="6dp"
+                    app:cornerRadius="12dp" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnChecklist" style="@style/Widget.Material3.Button.OutlinedButton"
+                    android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:text="Checklist post-recarga"
+                    app:cornerRadius="12dp" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
 
     </LinearLayout>
 </androidx.core.widget.NestedScrollView>

@@ -1,11 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.core.widget.NestedScrollView
     xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:fillViewport="true"
     android:background="?attr/colorSurface"
-    android:paddingBottom="16dp">
+    android:paddingBottom="24dp"
+    android:clipToPadding="false">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -13,72 +15,151 @@
         android:orientation="vertical"
         android:paddingHorizontal="16dp">
 
+        <!-- Emergencias: botón destacado -->
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnEmergency"
-            style="@style/Widget.Material3.Button.TonalButton"
+            style="@style/Widget.Material3.Button"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:layout_marginTop="4dp"
+            android:text="🚨  Emergencias  ·  103 – 107"
+            android:textSize="15sp"
+            android:letterSpacing="0.02"
+            app:cornerRadius="16dp" />
+
+        <!-- Accesos rápidos -->
+        <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:text="🚨 Emergencias (103–107)" />
-
-        <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:layout_marginTop="12dp" android:layout_marginBottom="8dp"
-            android:text="Accesos rápidos · mantén para cambiar"
-            android:textSize="12sp" android:textStyle="bold"
+            android:layout_marginTop="22dp"
+            android:layout_marginBottom="6dp"
+            android:text="ACCESOS RÁPIDOS"
+            android:textSize="11sp"
+            android:textStyle="bold"
+            android:letterSpacing="0.08"
             android:textColor="?attr/colorOnSurfaceVariant" />
 
-        <GridLayout android:id="@+id/gridShortcuts" android:layout_width="match_parent"
-            android:layout_height="wrap_content" android:columnCount="2"
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="4dp"
+            android:text="Mantén pulsado para cambiar"
+            android:textSize="11sp"
+            android:textColor="?attr/colorOnSurfaceVariant"
+            android:alpha="0.8" />
+
+        <GridLayout
+            android:id="@+id/gridShortcuts"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:columnCount="2"
             android:alignmentMode="alignBounds" />
 
-        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:orientation="horizontal" android:layout_marginTop="16dp" android:gravity="center_vertical">
-            <TextView android:layout_width="0dp" android:layout_height="wrap_content"
-                android:layout_weight="1" android:text="Favoritos"
-                android:textSize="12sp" android:textStyle="bold"
+        <!-- Favoritos -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginTop="24dp"
+            android:gravity="center_vertical">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="FAVORITOS"
+                android:textSize="11sp"
+                android:textStyle="bold"
+                android:letterSpacing="0.08"
                 android:textColor="?attr/colorOnSurfaceVariant" />
-            <TextView android:id="@+id/tvSeeAllFav" android:layout_width="wrap_content"
-                android:layout_height="wrap_content" android:text="Ver todos"
-                android:textSize="12sp" android:textColor="?attr/colorPrimary"
-                android:padding="4dp" />
+
+            <TextView
+                android:id="@+id/tvSeeAllFav"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Ver todos"
+                android:textSize="13sp"
+                android:textStyle="bold"
+                android:textColor="?attr/colorPrimary"
+                android:paddingHorizontal="8dp"
+                android:paddingVertical="4dp" />
         </LinearLayout>
 
-        <TextView android:id="@+id/tvFavEmpty" android:layout_width="match_parent"
-            android:layout_height="wrap_content" android:text="Toca ★ en cualquier código"
-            android:textSize="13sp" android:textColor="?attr/colorOnSurfaceVariant"
-            android:padding="8dp" android:visibility="gone" />
+        <TextView
+            android:id="@+id/tvFavEmpty"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Toca ★ en cualquier código para añadirlo"
+            android:textSize="13sp"
+            android:textColor="?attr/colorOnSurfaceVariant"
+            android:paddingVertical="12dp"
+            android:visibility="gone" />
 
-        <androidx.recyclerview.widget.RecyclerView android:id="@+id/rvFavorites"
-            android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:nestedScrollingEnabled="false" android:overScrollMode="never" />
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rvFavorites"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:nestedScrollingEnabled="false"
+            android:overScrollMode="never" />
 
-        <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:layout_marginTop="12dp" android:layout_marginBottom="8dp"
-            android:text="Más usados" android:textSize="12sp" android:textStyle="bold"
+        <!-- Más usados -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="22dp"
+            android:layout_marginBottom="6dp"
+            android:text="MÁS USADOS"
+            android:textSize="11sp"
+            android:textStyle="bold"
+            android:letterSpacing="0.08"
             android:textColor="?attr/colorOnSurfaceVariant" />
 
-        <androidx.recyclerview.widget.RecyclerView android:id="@+id/rvMostUsed"
-            android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:nestedScrollingEnabled="false" android:overScrollMode="never" />
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rvMostUsed"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:nestedScrollingEnabled="false"
+            android:overScrollMode="never" />
 
-        <TextView android:id="@+id/tvMostEmpty" android:layout_width="match_parent"
-            android:layout_height="wrap_content" android:text="Se llenará al usar códigos"
-            android:textSize="13sp" android:textColor="?attr/colorOnSurfaceVariant"
-            android:padding="8dp" android:visibility="gone" />
+        <TextView
+            android:id="@+id/tvMostEmpty"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Se llenará al usar códigos"
+            android:textSize="13sp"
+            android:textColor="?attr/colorOnSurfaceVariant"
+            android:paddingVertical="12dp"
+            android:visibility="gone" />
 
-        <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:layout_marginTop="12dp" android:layout_marginBottom="8dp"
-            android:text="Recientes" android:textSize="12sp" android:textStyle="bold"
+        <!-- Recientes -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="22dp"
+            android:layout_marginBottom="6dp"
+            android:text="RECIENTES"
+            android:textSize="11sp"
+            android:textStyle="bold"
+            android:letterSpacing="0.08"
             android:textColor="?attr/colorOnSurfaceVariant" />
 
-        <androidx.recyclerview.widget.RecyclerView android:id="@+id/rvRecents"
-            android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:nestedScrollingEnabled="false" android:overScrollMode="never" />
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rvRecents"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:nestedScrollingEnabled="false"
+            android:overScrollMode="never" />
 
-        <TextView android:id="@+id/tvRecentsEmpty" android:layout_width="match_parent"
-            android:layout_height="wrap_content" android:text="Aún no has marcado códigos"
-            android:textSize="13sp" android:textColor="?attr/colorOnSurfaceVariant"
-            android:gravity="center" android:padding="16dp" android:visibility="gone" />
+        <TextView
+            android:id="@+id/tvRecentsEmpty"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Aún no has marcado códigos"
+            android:textSize="13sp"
+            android:textColor="?attr/colorOnSurfaceVariant"
+            android:gravity="center"
+            android:padding="20dp"
+            android:visibility="gone" />
 
     </LinearLayout>
 </androidx.core.widget.NestedScrollView>
